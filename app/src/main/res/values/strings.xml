@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Fluffy</string>
+
+    <string name="instructions">Please select your level of pain on the scale from none (left) to maximum (right).</string>
+    <string name="title_activity_file_manager">Result Manager</string>
+    <string name="title_activity_preferences">Settings</string>
+    <string name="activity_email">Email</string>
+    <string name="activity_delete">Delete</string>
+    <string name="activity_clear">Clear Selection</string>
+
+
+</resources>

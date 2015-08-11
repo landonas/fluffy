@@ -1,0 +1,14 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="edu.ucsc.valsalva.FileManager">
+    <item android:id="@+id/action_email"
+        android:icon="@drawable/ic_launcher"
+        android:title="@string/activity_email"/>
+    <item android:id="@+id/action_delete"
+        android:icon="@drawable/ic_launcher"
+        android:title="@string/activity_delete"/>
+    <item android:id="@+id/action_clear"
+        android:icon="@drawable/ic_launcher"
+        android:title="@string/activity_clear"/>
+
+</menu>
