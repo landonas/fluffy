@@ -2,7 +2,7 @@
 
     <!-- These settings headers are only used on tablets. -->
 
-    <header android:fragment="edu.ucsc.valsalva.Preferences$GeneralPreferenceFragment"
+    <header android:fragment="edu.ucsc.fluffy.Preferences$GeneralPreferenceFragment"
         android:title="@string/pref_header_general" />
 
     <!--<header android:fragment="edu.ucsc.valsalva.Preferences$NotificationPreferenceFragment"-->

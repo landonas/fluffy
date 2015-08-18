@@ -1,0 +1,14 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools" tools:context="edu.ucsc.fluffy.ChooserActivity">
+    <item android:id="@+id/action_google_chooser"
+        android:icon="@drawable/ic_launcher"
+        android:title="@string/title_account_google_chooser"/>
+    <item android:id="@+id/action_file_manager"
+        android:icon="@drawable/ic_launcher"
+        android:title="@string/title_activity_file_manager"/>
+    <item android:id="@+id/action_preferences"
+        android:icon="@drawable/ic_launcher"
+        android:title="@string/title_activity_preferences"/>
+
+</menu>

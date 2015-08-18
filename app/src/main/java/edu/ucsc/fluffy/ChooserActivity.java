@@ -4,32 +4,43 @@ import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
 import android.app.Activity;
+import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
-import android.content.Context;
-import android.net.NetworkInfo;
-import android.app.Dialog;
-import com.google.android.gms.common.GooglePlayServicesUtil;
+import java.util.ArrayList;
+import android.widget.Button;
 
-import com.google.android.gms.auth.*;
+import com.google.android.gms.auth.GoogleAuthException;
+import com.google.android.gms.auth.GoogleAuthUtil;
+import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
+import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.AccountPicker;
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.drive.Drive;
 import com.google.gdata.client.spreadsheet.SpreadsheetService;
+import com.google.gdata.data.spreadsheet.CellEntry;
+import com.google.gdata.data.spreadsheet.CellFeed;
 import com.google.gdata.data.spreadsheet.SpreadsheetEntry;
 import com.google.gdata.data.spreadsheet.SpreadsheetFeed;
+import com.google.gdata.data.spreadsheet.WorksheetEntry;
 import com.google.gdata.util.ServiceException;
 
 import net.hockeyapp.android.CrashManager;
@@ -39,7 +50,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.List;
 
-public class MainActivity extends ActionBarActivity
+public class ChooserActivity extends ActionBarActivity
         implements ConnectionCallbacks, OnConnectionFailedListener {
     private final static String TAG = "Fluffy";
     public final String APP_ID="9f4540ae8fc66249da90e3c523efd662";
@@ -48,6 +59,8 @@ public class MainActivity extends ActionBarActivity
     //private String CLIENT_SECRET = "";
     private String SCOPE = "oauth2:https://spreadsheets.google.com/feeds";
     private String REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob";
+    public static final String GOOGLE_ACCOUNT = "Google_Account";
+    public static final String PROCEDURE_STEPS = "Procedure_Steps";
 
     private GoogleApiClient mGoogleApiClient;
     // Request code to use when launching the resolution activity
@@ -62,12 +75,22 @@ public class MainActivity extends ActionBarActivity
     private static final int REQUEST_CODE_RECOVER_FROM_PLAY_SERVICES_ERROR = 1003;
 
     private String mEmail; // Received from newChooseAccountIntent(); passed to getToken()
+    private ArrayList<String> procedureSteps = null; // asynchronously pulled from Google Sheets
+
 
     private void pickUserAccount() {
-        String[] accountTypes = new String[]{"com.google"};
-        Intent intent = AccountPicker.newChooseAccountIntent(null, null,
-                accountTypes, false, null, null, null, null);
-        startActivityForResult(intent, REQUEST_CODE_PICK_ACCOUNT);
+        // check if the saved account exists, and use it.
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        mEmail = sharedPref.getString(GOOGLE_ACCOUNT, null);
+        Log.i(TAG,"mEmail read: "+mEmail);
+
+        // if not ask for the accounts
+        if (mEmail==null) {
+            String[] accountTypes = new String[]{"com.google"};
+            Intent intent = AccountPicker.newChooseAccountIntent(null, null,
+                    accountTypes, false, null, null, null, null);
+            startActivityForResult(intent, REQUEST_CODE_PICK_ACCOUNT);
+        }
     }
 
 
@@ -77,8 +100,15 @@ public class MainActivity extends ActionBarActivity
             // Receiving a result from the AccountPicker
             if (resultCode == RESULT_OK) {
                 mEmail = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+                Log.i(TAG,"mEmail save: "+mEmail);
+                // save the email as a preference
+                SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putString(GOOGLE_ACCOUNT, mEmail);
+                editor.commit();
+
                 // With the account name acquired, go get the auth token
-                getUsername();
+                getProcedureSteps();
 
             } else if (resultCode == RESULT_CANCELED) {
                 // The account picker dialog closed without selecting an account.
@@ -89,7 +119,7 @@ public class MainActivity extends ActionBarActivity
                 requestCode == REQUEST_CODE_RECOVER_FROM_PLAY_SERVICES_ERROR)
                 && resultCode == RESULT_OK) {
             // Receiving a result that follows a GoogleAuthException, try auth again
-            getUsername();
+            getProcedureSteps();
         }
     }
 
@@ -98,11 +128,10 @@ public class MainActivity extends ActionBarActivity
         Log.i(TAG,"onCreate");
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_chooser);
 
         // Hockeyapp updates
         checkForUpdates();
-
 
     }
 
@@ -113,6 +142,10 @@ public class MainActivity extends ActionBarActivity
         // The good stuff goes here.
 
         Log.i(TAG, "GoogleApiClient connected");
+
+        if (procedureSteps == null) {
+            getProcedureSteps();
+        }
 
     }
 
@@ -153,7 +186,7 @@ public class MainActivity extends ActionBarActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu items for use in the action bar
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu_main, menu);
+        inflater.inflate(R.menu.menu_chooser, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -176,6 +209,16 @@ public class MainActivity extends ActionBarActivity
             case R.id.action_preferences:
                 intent = new Intent(this, Preferences.class);
                 startActivity(intent);
+                return true;
+            case R.id.action_google_chooser:
+                // set it to null so we pick over
+                mEmail=null;
+                // clear the email preference
+                SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putString(GOOGLE_ACCOUNT, mEmail);
+                editor.commit();
+                pickUserAccount();
                 return true;
         }
 
@@ -217,18 +260,20 @@ public class MainActivity extends ActionBarActivity
 
     @Override
     protected void onResume() {
-        Log.i(TAG,"onResume");
+        Log.i(TAG, "onResume");
         super.onResume();
         checkForCrashes();
+
+
     }
 
 
     /**
-     * Attempts to retrieve the username.
+     * Attempts to retrieve the spreadsheet data.
      * If the account is not yet known, invoke the picker. Once the account is known,
      * start an instance of the AsyncTask to get the auth token and do work with it.
      */
-    private void getUsername() {
+    private void getProcedureSteps() {
         if (mEmail == null) {
             pickUserAccount();
         } else {
@@ -236,19 +281,20 @@ public class MainActivity extends ActionBarActivity
                     getSystemService(Context.CONNECTIVITY_SERVICE);
             NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
             if (networkInfo != null && networkInfo.isConnected()) {
-                new GetUsernameTask(MainActivity.this, mEmail, SCOPE).execute();
+                new GetProcedureStepsTask(ChooserActivity.this, mEmail, SCOPE).execute();
             } else {
                 Toast.makeText(this, "Not online", Toast.LENGTH_LONG).show();
             }
         }
     }
 
-    public class GetUsernameTask extends AsyncTask{
+    // This async task will read the procedure steps from the spreadsheet
+    public class GetProcedureStepsTask extends AsyncTask<String, Void, ArrayList<String>> {
         Activity mActivity;
         String mScope;
         String mEmail;
 
-        GetUsernameTask(Activity activity, String name, String scope) {
+        GetProcedureStepsTask(Activity activity, String name, String scope) {
             this.mActivity = activity;
             this.mScope = scope;
             this.mEmail = name;
@@ -259,8 +305,9 @@ public class MainActivity extends ActionBarActivity
          * on the AsyncTask instance.
          */
         @Override
-        protected String doInBackground(Object... param) {
+        protected ArrayList<String> doInBackground(String... param) {
             try {
+                Log.i(TAG,"doInBackground");
                 String token = fetchToken();
                 if (token != null) {
                     // **Insert the good stuff here.**
@@ -280,10 +327,45 @@ public class MainActivity extends ActionBarActivity
                         feed = service.getFeed(SPREADSHEET_FEED_URL, SpreadsheetFeed.class);
                         List<SpreadsheetEntry> spreadsheets = feed.getEntries();
 
+                        // get the spreadsheet name
+                        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                        String ss_name = prefs.getString("spreadsheet_name", getString(R.string.pref_default_spreadsheet_name));
+
                         // Iterate through all of the spreadsheets returned
                         for (SpreadsheetEntry spreadsheet : spreadsheets) {
                             // Print the title of this spreadsheet to the screen
-                            Log.i(TAG,"Sheet: " + spreadsheet.getTitle().getPlainText());
+                            if (ss_name != null && ss_name.equals(spreadsheet.getTitle().getPlainText())) {
+                                Log.i(TAG, "Found Sheet: " + spreadsheet.getTitle().getPlainText());
+
+                                for (WorksheetEntry worksheet : spreadsheet.getWorksheets()) {
+                                    Log.i(TAG, "Worksheet: " + worksheet.getTitle().getPlainText() + " " + worksheet.getRowCount() + " x " + worksheet.getColCount());
+                                    ArrayList<String> steps = new ArrayList<String>();
+
+                                    if ("Procedure Steps".equals(worksheet.getTitle().getPlainText())) {
+                                        URL cellFeedUrl = worksheet.getCellFeedUrl();
+                                        CellFeed cellFeed = service.getFeed(cellFeedUrl, CellFeed.class);
+
+                                        // Iterate through each cell, printing its value.
+                                        for (CellEntry cell : cellFeed.getEntries()) {
+                                            steps.add(cell.getCell().getInputValue());
+                                            Log.i(TAG, cell.getCell().getInputValue());
+
+                                            // Print the cell's address in A1 notation
+                                            //Log.i(TAG, cell.getTitle().getPlainText() + "\t");
+                                            // Print the cell's address in R1C1 notation
+                                            //Log.i(TAG, cell.getId().substring(cell.getId().lastIndexOf('/') + 1) + "\t");
+                                            // Print the cell's formula or text value
+                                            //Log.i(TAG,cell.getCell().getInputValue() + "\t");
+                                            // Print the cell's calculated value if the cell's value is numeric
+                                            // Prints empty string if cell's value is not numeric
+                                            //Log.i(TAG,cell.getCell().getNumericValue() + "\t");
+                                            // Print the cell's displayed value (useful if the cell has a formula)
+                                            //Log.i(TAG,cell.getCell().getValue() + "\t\n");
+                                        }
+                                    }
+                                    return steps;
+                                }
+                            }
                         }
                     } catch (ServiceException e) {
                         // TODO Auto-generated catch block
@@ -309,7 +391,7 @@ public class MainActivity extends ActionBarActivity
             } catch (UserRecoverableAuthException userRecoverableException) {
                 // GooglePlayServices.apk is either old, disabled, or not present
                 // so we need to show the user some UI in the activity to recover.
-                MainActivity.this.handleException(userRecoverableException);
+                ChooserActivity.this.handleException(userRecoverableException);
             } catch (GoogleAuthException fatalException) {
                 // Some other type of unrecoverable exception has occurred.
                 // Report and log the error as appropriate for your app.
@@ -317,8 +399,34 @@ public class MainActivity extends ActionBarActivity
             }
             return null;
         }
-        //...
+
+        @Override
+        protected void onPostExecute(ArrayList<String> s) {
+            procedureSteps = s;
+
+            // make the buttons active
+            Button buttonAssistant = (Button) findViewById(R.id.buttonAssistant);
+            buttonAssistant.setEnabled(true);
+
+            Button buttonPatient = (Button) findViewById(R.id.buttonPatient);
+            buttonPatient.setEnabled(true);
+
+            //
+        }
     }
+
+//    // Create a local representation of the new worksheet.
+//    WorksheetEntry worksheet = new WorksheetEntry();
+//    worksheet.setTitle(new PlainTextConstruct("New Worksheet"));
+//    worksheet.setColCount(10);
+//    worksheet.setRowCount(20);
+//
+//    // Send the local representation of the worksheet to the API for
+//    // creation.  The URL to use here is the worksheet feed URL of our
+//    // spreadsheet.
+//    URL worksheetFeedUrl = spreadsheet.getWorksheetFeedUrl();
+//    service.insert(worksheetFeedUrl, worksheet);
+//
 
     private class GetAuthTokenCallback implements AccountManagerCallback<Bundle> {
         public void run(AccountManagerFuture<Bundle> result) {
@@ -390,7 +498,7 @@ public class MainActivity extends ActionBarActivity
                     int statusCode = ((GooglePlayServicesAvailabilityException)e)
                             .getConnectionStatusCode();
                     Dialog dialog = GooglePlayServicesUtil.getErrorDialog(statusCode,
-                            MainActivity.this,
+                            ChooserActivity.this,
                             REQUEST_CODE_RECOVER_FROM_PLAY_SERVICES_ERROR);
                     dialog.show();
                 } else if (e instanceof UserRecoverableAuthException) {
@@ -404,4 +512,17 @@ public class MainActivity extends ActionBarActivity
             }
         });
     }
+
+    public void startAssistant(View view) {
+        Intent intent = new Intent(this, DoctorActivity.class);
+        intent.putStringArrayListExtra(PROCEDURE_STEPS, procedureSteps);
+        startActivity(intent);
+    }
+
+    public void startPatient(View view) {
+        Intent intent = new Intent(this, PatientActivity.class);
+        startActivity(intent);
+    }
 }
+
+

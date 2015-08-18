@@ -1,0 +1,115 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    tools:context="edu.ucsc.fluffy.PatientData">
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="10"
+        android:id="@+id/patientID"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="10"
+        android:id="@+id/patientAge"
+        android:layout_below="@+id/patientID"
+        android:layout_alignStart="@+id/patientID" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="10"
+        android:id="@+id/patientVAS"
+        android:layout_below="@+id/patientAge"
+        android:layout_alignStart="@+id/patientAge" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/patientRace"
+        android:layout_below="@+id/patientVAS"
+        android:layout_toStartOf="@+id/patientBMI"
+        android:layout_alignEnd="@+id/patientBMI" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="10"
+        android:id="@+id/patientBMI"
+        android:layout_below="@+id/patientRace"
+        android:layout_alignStart="@+id/patientVAS" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Patient ID"
+        android:id="@+id/textID"
+        android:layout_alignBottom="@+id/patientID"
+        android:layout_toStartOf="@+id/patientID" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Age"
+        android:id="@+id/textAge"
+        android:layout_above="@+id/patientVAS"
+        android:layout_toStartOf="@+id/patientAge" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Anxiety VAS"
+        android:id="@+id/textVAS"
+        android:layout_alignBottom="@+id/patientVAS"
+        android:layout_toStartOf="@+id/patientVAS" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Race"
+        android:id="@+id/textRace"
+        android:layout_above="@+id/patientBMI"
+        android:layout_toStartOf="@+id/patientBMI" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="BMI"
+        android:id="@+id/textBMI"
+        android:layout_alignBottom="@+id/patientBMI"
+        android:layout_toStartOf="@+id/patientBMI" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save"
+        android:id="@+id/buttonSave"
+        android:layout_centerVertical="true"
+        android:layout_alignStart="@+id/patientBMI"
+        android:layout_marginStart="45dp" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Cancel"
+        android:id="@+id/buttonCancel"
+        android:layout_alignTop="@+id/buttonSave"
+        android:layout_alignStart="@+id/textID" />
+
+</RelativeLayout>
