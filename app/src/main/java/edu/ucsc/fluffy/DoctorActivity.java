@@ -8,24 +8,32 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+
+import java.io.File;
 import java.util.ArrayList;
 import android.widget.Button;
+import android.widget.Toast;
 
 public class DoctorActivity extends ActionBarActivity {
     final private String TAG = DoctorActivity.class.getSimpleName();
     private ArrayList<String> procedureSteps = null;
 
-    private Button buttonNextStep = null;
-    private Button buttonEditPatient = null;
-    private TextView textNextStep = null;
-    private TextView textCurrentStep = null;
-    private int currentStepIndex = 0;
+    static final int REQUEST_PATIENT_ID = 1;
 
-    private FileUtil fUtil = null;
+    private Button buttonNextStep;
+    private Button buttonEditPatient;
+    private TextView textNextStep;
+    private TextView textCurrentStep;
+    private int currentStepIndex;
+    private int patientID;
 
+    private Patient p = null;
+    private File f = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.i(TAG, "onCreate"+ patientID);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_doctor);
 
@@ -39,6 +47,52 @@ public class DoctorActivity extends ActionBarActivity {
         currentStepIndex = 0;
         textNextStep.setText(procedureSteps.get(currentStepIndex));
 
+
+
+    }
+
+    @Override
+    protected void onStart() {
+        Log.i(TAG, "onStart"+ patientID);
+        super.onStart();
+    }
+
+    @Override
+    protected void onStop() {
+        Log.i(TAG,"onStop"+ patientID);
+        super.onStop();
+    }
+
+    @Override
+    protected void onPause() {
+        Log.i(TAG,"onPause" + patientID);
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        Log.i(TAG, "onResume");
+        super.onResume();
+        Log.i(TAG, "patientID: " + patientID);
+
+        // we need at least a patient ID to start
+        if (patientID == 0) {
+            Intent intent = new Intent(this, PatientData.class);
+            intent.putExtra("patientID", patientID);
+            startActivityForResult(intent, REQUEST_PATIENT_ID);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_PATIENT_ID && resultCode == RESULT_OK) {
+            patientID = data.getIntExtra("patientID",0);
+            Log.i(TAG,"Selected patientID: "+ patientID);
+        } else {
+            Toast.makeText(this, "Patient ID is required.", Toast.LENGTH_SHORT).show();
+
+            Log.e(TAG, "Invalid activity result.");
+        }
 
     }
 
@@ -69,13 +123,14 @@ public class DoctorActivity extends ActionBarActivity {
         currentStepIndex++;
 
         if (currentStepIndex == 1) {
-            // open the database
-            fUtil = new FileUtil(getApplicationContext().getExternalFilesDir(null));
-            fUtil.openDataFile();
+            //p = new Patient(patientID);
+            f = new File(getApplicationContext().getExternalFilesDir(null),"patient_"+patientID+".ser" );
+            loadOrCreatePatient();
+                Log.i(TAG, "Opening file");
         }
 
         if (currentStepIndex > procedureSteps.size()) {
-                // Finish
+            savePatient();
         } else {
                 // mark the time step
         }
@@ -95,8 +150,20 @@ public class DoctorActivity extends ActionBarActivity {
 
     }
 
+    private void loadOrCreatePatient() {
+        if (f.exists()) {
+            p = Patient.deserialize(f.getAbsolutePath());
+        } else {
+            p = new Patient(patientID);
+        }
+    }
+    private void savePatient() {
+        p.serialize(f.getAbsolutePath());
+    }
+
     public void startEditPatient(View view) {
         Intent intent = new Intent(this, PatientData.class);
+        intent.putExtra("patientID", patientID);
         startActivity(intent);
     }
 }

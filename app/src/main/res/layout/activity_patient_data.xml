@@ -15,6 +15,7 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true" />
 
+
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -28,23 +29,26 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:inputType="number"
+        android:digits="0123456789."
         android:ems="10"
         android:id="@+id/patientVAS"
         android:layout_below="@+id/patientAge"
         android:layout_alignStart="@+id/patientAge" />
 
-    <EditText
+    <Spinner
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/patientRace"
         android:layout_below="@+id/patientVAS"
-        android:layout_toStartOf="@+id/patientBMI"
-        android:layout_alignEnd="@+id/patientBMI" />
+        android:layout_toEndOf="@+id/textAge"
+        android:layout_alignStart="@+id/buttonSave" />
+
 
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:inputType="number"
+        android:digits="0123456789."
         android:ems="10"
         android:id="@+id/patientBMI"
         android:layout_below="@+id/patientRace"
@@ -54,10 +58,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="Patient ID"
+        android:text="ID*"
         android:id="@+id/textID"
-        android:layout_alignBottom="@+id/patientID"
-        android:layout_toStartOf="@+id/patientID" />
+        android:layout_alignBottom="@+id/patientID" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -65,17 +68,18 @@
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="Age"
         android:id="@+id/textAge"
-        android:layout_above="@+id/patientVAS"
-        android:layout_toStartOf="@+id/patientAge" />
+        android:layout_alignBottom="@+id/patientAge"
+        android:layout_below="@+id/patientID"
+        />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="Anxiety VAS"
+        android:text="Anxiety"
         android:id="@+id/textVAS"
-        android:layout_alignBottom="@+id/patientVAS"
-        android:layout_toStartOf="@+id/patientVAS" />
+        android:layout_alignBottom="@+id/patientAnxiety"
+        android:layout_below="@+id/patientAge"/>
 
     <TextView
         android:layout_width="wrap_content"
@@ -83,8 +87,8 @@
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="Race"
         android:id="@+id/textRace"
-        android:layout_above="@+id/patientBMI"
-        android:layout_toStartOf="@+id/patientBMI" />
+        android:layout_alignTop="@+id/patientRace"
+        android:layout_below="@+id/patientAnxiety"/>
 
     <TextView
         android:layout_width="wrap_content"
@@ -93,23 +97,18 @@
         android:text="BMI"
         android:id="@+id/textBMI"
         android:layout_alignBottom="@+id/patientBMI"
-        android:layout_toStartOf="@+id/patientBMI" />
+        android:layout_below="@+id/patientRace"/>
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Save"
         android:id="@+id/buttonSave"
-        android:layout_centerVertical="true"
-        android:layout_alignStart="@+id/patientBMI"
-        android:layout_marginStart="45dp" />
+        android:onClick="savePatient"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true" />
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Cancel"
-        android:id="@+id/buttonCancel"
-        android:layout_alignTop="@+id/buttonSave"
-        android:layout_alignStart="@+id/textID" />
+
+
 
 </RelativeLayout>

@@ -16,5 +16,16 @@
     <string name="title_activity_chooser">ChooserActivity</string>
     <string name="title_account_google_chooser">Google Account</string>
 
+    <string-array name="race_array">
+        <item>-</item>
+        <item>White/Caucasian</item>
+        <item>Hispanic/Latino</item>
+        <item>Black/African American</item>
+        <item>Asian</item>
+        <item>American Indian</item>
+        <item>Pacific Islander</item>
+        <item>Other</item>
+    </string-array>
+
 
 </resources>
