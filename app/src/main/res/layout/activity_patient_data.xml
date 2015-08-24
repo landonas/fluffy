@@ -99,6 +99,14 @@
         android:layout_alignBottom="@+id/patientBMI"
         android:layout_below="@+id/patientRace"/>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Procedure Times and Steps"
+        android:id="@+id/textSteps"
+        android:layout_below="@+id/patientBMI"/>
+
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -108,7 +116,24 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true" />
 
-
+    <ScrollView android:id="@+id/textAreaScroller"
+        android:layout_width="fill_parent"
+        android:layout_height="173px"
+        android:layout_x="0px"
+        android:layout_y="25px"
+        android:background="#80ff0000"
+        android:scrollbars="vertical"
+        android:layout_alignParentStart="true"
+        android:layout_above="@+id/buttonSave"
+        android:layout_below="@+id/textSteps">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:id="@+id/stepView"
+        android:layout_centerVertical="true"
+        android:layout_alignParentStart="true" />
+    </ScrollView>
 
 
 </RelativeLayout>

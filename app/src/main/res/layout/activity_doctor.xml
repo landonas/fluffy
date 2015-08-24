@@ -14,45 +14,52 @@
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:id="@+id/textTime"
-        android:layout_above="@+id/textNext"
-        android:layout_centerHorizontal="true"
-        android:textSize="40dp" />
+        android:textSize="40dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignEnd="@+id/buttonEditPatient" />
 
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textStyle="bold"
         android:text="Current Step"
         android:id="@+id/textCurrent"
-        android:layout_marginTop="51dp" />
+        android:layout_below="@+id/textTime"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="54dp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textStyle="bold"
         android:text="Next Step"
         android:id="@+id/textNext"
-        android:layout_alignTop="@+id/textCurrent"
-        android:layout_toEndOf="@+id/textTime" />
+        android:layout_below="@+id/textCurrentStep"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="40dp" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Proceed to Next"
         android:id="@+id/buttonNextStep"
-        android:layout_below="@+id/textTime"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="87dp" />
+        android:onClick="nextStep"
+        android:layout_below="@+id/textNextStep"
+        android:layout_alignStart="@+id/buttonEditPatient"
+        android:layout_marginTop="54dp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="Waiting"
+        android:text="@string/waiting"
         android:id="@+id/textCurrentStep"
         android:layout_below="@+id/textCurrent"
-        android:layout_alignStart="@+id/textCurrent" />
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="10dp" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -61,7 +68,8 @@
         android:text="Default"
         android:id="@+id/textNextStep"
         android:layout_below="@+id/textNext"
-        android:layout_alignStart="@+id/textNext" />
+        android:layout_alignStart="@+id/textNext"
+        android:layout_marginTop="10dp" />
 
     <Button
         android:layout_width="wrap_content"
@@ -70,8 +78,25 @@
         android:id="@+id/buttonEditPatient"
         android:onClick="startEditPatient"
         android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="43dp" />
+        android:layout_toEndOf="@+id/textNext" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textStyle="bold"
+        android:text="@string/patient"
+        android:id="@+id/textPatient"
+        android:layout_below="@+id/textTime" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="0"
+        android:id="@+id/tvPatient"
+        android:layout_alignTop="@+id/textPatient"
+        android:layout_alignStart="@+id/textTime" />
 
 
 </RelativeLayout>

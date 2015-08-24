@@ -56,9 +56,8 @@ public class ChooserActivity extends ActionBarActivity
     public final String APP_ID="9f4540ae8fc66249da90e3c523efd662";
 
     private String CLIENT_ID = "546501280634-9ap7gnjoqfo7dmk7vf7jkujka9t931gu.apps.googleusercontent.com";
-    //private String CLIENT_SECRET = "";
-    private String SCOPE = "oauth2:https://spreadsheets.google.com/feeds";
-    private String REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob";
+    public static String SCOPE = "oauth2:https://spreadsheets.google.com/feeds";
+    public static String REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob";
     public static final String GOOGLE_ACCOUNT = "Google_Account";
     public static final String PROCEDURE_STEPS = "Procedure_Steps";
 
@@ -74,7 +73,7 @@ public class ChooserActivity extends ActionBarActivity
     private static final int REQUEST_CODE_RECOVER_FROM_AUTH_ERROR = 1002;
     private static final int REQUEST_CODE_RECOVER_FROM_PLAY_SERVICES_ERROR = 1003;
 
-    private String mEmail; // Received from newChooseAccountIntent(); passed to getToken()
+    public static String mEmail; // Received from newChooseAccountIntent(); passed to getToken()
     private ArrayList<String> procedureSteps = null; // asynchronously pulled from Google Sheets
 
 
@@ -206,8 +205,12 @@ public class ChooserActivity extends ActionBarActivity
                 intent = new Intent(this, FileManager.class);
                 startActivity(intent);
                 return true;
-            case R.id.action_preferences:
+            case R.id.action_settings:
                 intent = new Intent(this, Preferences.class);
+                startActivity(intent);
+                return true;
+            case R.id.action_file_manager:
+                intent = new Intent(this, FileManager.class);
                 startActivity(intent);
                 return true;
             case R.id.action_google_chooser:
@@ -219,6 +222,10 @@ public class ChooserActivity extends ActionBarActivity
                 editor.putString(GOOGLE_ACCOUNT, mEmail);
                 editor.commit();
                 pickUserAccount();
+                return true;
+            case R.id.action_about:
+                intent = new Intent(this, AboutActivity.class);
+                startActivity(intent);
                 return true;
         }
 

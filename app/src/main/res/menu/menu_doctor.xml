@@ -2,6 +2,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="edu.ucsc.fluffy.DoctorActivity">
-    <item android:id="@+id/action_settings" android:title="@string/action_settings"
-        android:orderInCategory="100" app:showAsAction="never" />
+
+    <item android:id="@+id/action_file_manager"
+        android:icon="@drawable/ic_launcher"
+        android:title="@string/title_activity_file_manager"/>
+    <item android:id="@+id/action_settings"
+        android:icon="@drawable/ic_launcher"
+        android:title="@string/title_activity_preferences"/>
+
+    <item android:id="@+id/action_about"
+        android:icon="@drawable/ic_launcher"
+        android:title="@string/activity_about"/>
+
+
 </menu>
