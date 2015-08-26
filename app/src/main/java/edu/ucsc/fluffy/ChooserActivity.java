@@ -283,16 +283,17 @@ public class ChooserActivity extends ActionBarActivity
     private void getProcedureSteps() {
         if (mEmail == null) {
             pickUserAccount();
-        } else {
-            ConnectivityManager connMgr = (ConnectivityManager)
-                    getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-            if (networkInfo != null && networkInfo.isConnected()) {
-                new GetProcedureStepsTask(ChooserActivity.this, mEmail, SCOPE).execute();
-            } else {
-                Toast.makeText(this, "Not online", Toast.LENGTH_LONG).show();
-            }
         }
+
+        ConnectivityManager connMgr = (ConnectivityManager)
+                getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+        if (networkInfo != null && networkInfo.isConnected()) {
+            new GetProcedureStepsTask(ChooserActivity.this, mEmail, SCOPE).execute();
+        } else {
+            Toast.makeText(this, "Not online", Toast.LENGTH_LONG).show();
+        }
+
     }
 
     // This async task will read the procedure steps from the spreadsheet

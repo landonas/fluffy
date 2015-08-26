@@ -74,7 +74,7 @@ public class Patient implements java.io.Serializable {
         } catch (InvalidClassException e) {
             File f = new File(s);
             f.delete();
-            return(new Patient(id));
+            return null; // they should create a new patient but delete the old file first
         } catch (IOException i) {
             i.printStackTrace();
             return null;

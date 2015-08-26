@@ -9,6 +9,14 @@
     <TextView android:text="@string/instructions" android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/textView" />
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Finish"
+        android:id="@+id/buttonFinish"
+        android:onClick="finishPatient"
+        android:layout_below="@+id/textView"
+        android:layout_alignParentStart="true" />
 
     <SeekBar
         android:layout_width="wrap_content"
@@ -17,23 +25,11 @@
         android:layout_below="@+id/textView"
         android:layout_alignParentStart="true"
         android:layout_marginTop="186dp"
+        android:max="100"
+        android:progress="0"
+        android:paddingLeft="30dp"
+        android:paddingRight="30dp"
         android:layout_alignParentEnd="true" />
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Start"
-        android:id="@+id/buttonStart"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginBottom="53dp" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Stop"
-        android:id="@+id/buttonStop"
-        android:layout_alignTop="@+id/buttonStart"
-        android:layout_alignEnd="@+id/seekBar" />
 
 </RelativeLayout>

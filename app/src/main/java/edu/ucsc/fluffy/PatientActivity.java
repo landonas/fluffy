@@ -1,11 +1,15 @@
 package edu.ucsc.fluffy;
 
+import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
+import android.widget.SeekBar;
+import android.widget.Toast;
 
 import java.io.File;
 
@@ -13,45 +17,56 @@ public class PatientActivity extends ActionBarActivity
         implements PatientDialogFragment.PatientIDInterface {
     final private String TAG = PatientActivity.class.getSimpleName();
 
-    private int patientID = 0;
-    private Patient p=null;
-    private File f=null;
+    static final int LOAD_UPDATED_PATIENT = 1;
 
-    @Override
-    public void loadOrCreatePatient(int id) {
-        if (id == 0)
-            showPatientIDDialog();
-
-        patientID = id;
-        f = new File(getApplicationContext().getExternalFilesDir(null), "patient_" + patientID + ".ser");
-
-        // The file should always exist since we at least need a patient ID and that saved the file
-        if (f.exists()) {
-            Log.i(TAG, "Opening file" + f.getAbsolutePath());
-            p = Patient.deserialize(f.getAbsolutePath(),patientID);
-        } else {
-            Log.i(TAG, "Creating new patient..." + patientID);
-            p = new Patient(patientID);
-        }
-    }
-
-    public void showPatientIDDialog() {
-        // Create an instance of the dialog fragment and show it
-        PatientDialogFragment dialog = new PatientDialogFragment();
-        dialog.show(getSupportFragmentManager(), "PatientDialogFragment");
-    }
-
+    private int patientID;
+    private Patient p = null;
+    private File f = null;
+    private Float painLevel;
+    private SeekBar sb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_patient);
 
-        // prompt for a patient ID
-        if (p==null) {
-            p = new Patient(patientID);
-            f = new File(getApplicationContext().getExternalFilesDir(null),"patient_"+patientID+".ser" );
+        sb = (SeekBar) findViewById(R.id.seekBar);
+        sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                Log.i(TAG, "Pain: " + Float.toString(painLevel));
+                long cur_time = System.currentTimeMillis();
+                p.setPain(cur_time, painLevel);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                // TODO Auto-generated method stub
+            }
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                painLevel = progress / 10.0f;
+            }
+        });
+    }
+
+    @Override
+    protected void onStart() {
+        Log.i(TAG, "onStart");
+        super.onStart();
+
+        // we need at least a patient ID to start
+        if (patientID == 0)
+            showPatientIDDialog();
+    }
+
+    public void finishPatient(View view) {
+        if (f != null && p != null) {
+            Log.i(TAG, "Saved " + f.getAbsolutePath());
+            p.serialize(f.getAbsolutePath());
         }
+        finish();
     }
 
     @Override
@@ -74,5 +89,35 @@ public class PatientActivity extends ActionBarActivity
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void showPatientIDDialog() {
+        // Create an instance of the dialog fragment and show it
+        PatientDialogFragment dialog = new PatientDialogFragment();
+        dialog.show(getSupportFragmentManager(), "PatientDialogFragment");
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // Check which request we're responding to
+        if (requestCode == LOAD_UPDATED_PATIENT) {
+            // Make sure the request was successful
+            if (resultCode == RESULT_OK) {
+                // restore the patient so that we have the new patient data
+                loadOrCreatePatient(patientID);
+            }
+        }
+    }
+
+    @Override
+    public void loadOrCreatePatient(int id) {
+        if (id == 0)
+            showPatientIDDialog();
+
+        patientID = id;
+        // always create a new one since this is not editable
+        Log.i(TAG, "Creating new patient..." + patientID);
+        f = new File(getApplicationContext().getExternalFilesDir(null), "patient_" + patientID + ".ser");
+        p = new Patient(patientID);
     }
 }
