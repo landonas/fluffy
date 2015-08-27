@@ -508,7 +508,7 @@ public class FileManager extends AppCompatActivity {
 
             URL worksheetFeedUrl = spreadsheet.getWorksheetFeedUrl();
             try {
-                worksheet = service.insert(worksheetFeedUrl, worksheet);
+                service.insert(worksheetFeedUrl, worksheet);
             } catch (InvalidEntryException e) {
                 Log.e(TAG, "Worksheet already exists.");
                 e.printStackTrace();
@@ -516,19 +516,19 @@ public class FileManager extends AppCompatActivity {
             }
 
             // query the worksheet again to not use the local one
-            //worksheet = findWorksheet(service,spreadsheet,ws_name);
+            worksheet = findWorksheet(service,spreadsheet,ws_name);
+
             // add the header rows
             URL cellFeedUrl = worksheet.getCellFeedUrl();
             CellFeed cellFeed = service.getFeed(cellFeedUrl, CellFeed.class);
+            CellEntry cell=new CellEntry(1,1,"Time");
+            service.insert(cellFeedUrl, cell);
+            cell=new CellEntry(1,2,"Pain");
+            service.insert(cellFeedUrl, cell);
+
             // update the first row to have the correct titles
-            for (CellEntry cell : cellFeed.getEntries()) {
-                if (cell.getTitle().getPlainText().equals("A1")) {
-                    cell.changeInputValueLocal("Time");
-                    cell.update();
-                } else if (cell.getTitle().getPlainText().equals("B1")) {
-                    cell.changeInputValueLocal("Pain");
-                    cell.update();
-                }
+            for (CellEntry c : cellFeed.getEntries()) {
+                Log.i(TAG,"Cell: " + c.getTitle().getPlainText());
             }
 
             URL listFeedUrl = worksheet.getListFeedUrl();
@@ -545,6 +545,7 @@ public class FileManager extends AppCompatActivity {
                 System.out.println();
             }
 
+            URL listFeedUrl2 = worksheet.getListFeedUrl();
             SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 
             for (Pair<Long, Float> pit : p.pain) {
@@ -552,9 +553,7 @@ public class FileManager extends AppCompatActivity {
                 Date resultdate = new Date(pit.getFirst());
                 row.getCustomElements().setValueLocal("Time", sdf.format(resultdate));
                 row.getCustomElements().setValueLocal("Pain", Float.toString(pit.getSecond()));
-                Log.i(TAG, "Timm " + sdf.format(resultdate) + " Pain " + Float.toString(pit.getSecond()));
-                //row.update();
-                service.insert(listFeedUrl, row);
+                service.insert(listFeedUrl2, row);
             }
         } catch (ServiceException e) {
             e.printStackTrace();
