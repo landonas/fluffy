@@ -12,6 +12,7 @@ import android.widget.SeekBar;
 import android.widget.Toast;
 
 import java.io.File;
+import java.util.ArrayList;
 
 public class PatientActivity extends ActionBarActivity
         implements PatientDialogFragment.PatientIDInterface {
@@ -65,6 +66,11 @@ public class PatientActivity extends ActionBarActivity
         if (f != null && p != null) {
             Log.i(TAG, "Saved " + f.getAbsolutePath());
             p.serialize(f.getAbsolutePath());
+            Intent intent = new Intent(this, FileManager.class);
+            ArrayList<String> files = new ArrayList<String>();
+            files.add(f.getAbsolutePath());
+            intent.putStringArrayListExtra("patientFile", files);
+            startActivity(intent);
         }
         finish();
     }

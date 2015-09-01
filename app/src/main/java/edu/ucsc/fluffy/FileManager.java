@@ -67,6 +67,15 @@ public class FileManager extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // If the file is passed as an argument, we don't actually want to prompt
+        // for which file to upload. Instead, just upload it and finish.
+        ArrayList<String> myFiles = getIntent().getStringArrayListExtra("patientFile");
+        if (myFiles != null) {
+            Log.i(TAG, "PatientID File: " + myFiles.toString());
+            uploadData(myFiles);
+            finish();
+        }
+
         setContentView(R.layout.activity_filemanager);
 
         displayListView();
@@ -96,7 +105,10 @@ public class FileManager extends AppCompatActivity {
             deleteFiles();
             return true;
         } else if (id == R.id.action_clear) {
-            clearFiles();
+            clearAllFiles();
+            return true;
+        }else if (id == R.id.action_select) {
+            selectAllFiles();
             return true;
         } else if (id == R.id.action_edit) {
             editPatient();
@@ -237,12 +249,23 @@ public class FileManager extends AppCompatActivity {
     }
 
 
-    private void clearFiles() {
+    private void clearAllFiles() {
 
         Iterator<DataFile> listIterator = dataAdapter.fileList.listIterator();
         while (listIterator.hasNext()) {
             DataFile f = listIterator.next();
             f.setSelected(false);
+        }
+        dataAdapter.notifyDataSetChanged();
+
+    }
+
+    private void selectAllFiles() {
+
+        Iterator<DataFile> listIterator = dataAdapter.fileList.listIterator();
+        while (listIterator.hasNext()) {
+            DataFile f = listIterator.next();
+            f.setSelected(true);
         }
         dataAdapter.notifyDataSetChanged();
 
@@ -303,32 +326,25 @@ public class FileManager extends AppCompatActivity {
         int count = 0;
         while (listIterator.hasNext()) {
             DataFile f = listIterator.next();
-            if (f.isSelected()) {
-                //convert from paths to Android friendly Parcelable Uri's
-                myFile = f.getFile();
+            if (f.isSelected())
                 count++;
-
-                //if (f.isSelected())
-                //   f.setSelected(false); // clear them
-            }
         }
 
         if (count == 0) {
             Toast.makeText(getApplicationContext(),
                     "Please select one file.", Toast.LENGTH_SHORT).show();
-        } else if (count > 1) {
-            Toast.makeText(getApplicationContext(),
-                    "Please select only one file.", Toast.LENGTH_SHORT).show();
         } else {
-
-            putPatientData(myFile.getAbsolutePath());
-
+            ArrayList<String> files = new ArrayList<String>();
             listIterator = dataAdapter.fileList.listIterator();
             while (listIterator.hasNext()) {
                 DataFile f = listIterator.next();
-                if (f.isSelected())
+                if (f.isSelected()) {
+                    files.add(f.getFile().getAbsolutePath());
                     f.setSelected(false); // clear them after send
+                }
             }
+            uploadData(files);
+
             dataAdapter.notifyDataSetChanged();
         }
 
@@ -388,7 +404,7 @@ public class FileManager extends AppCompatActivity {
      * If the account is not yet known, invoke the picker. Once the account is known,
      * start an instance of the AsyncTask to get the auth token and do work with it.
      */
-    private void putPatientData(String fname) {
+    public void uploadData(ArrayList<String> fnames) {
         if (mEmail == null) {
             pickUserAccount();
         }
@@ -396,15 +412,15 @@ public class FileManager extends AppCompatActivity {
                 getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         if (networkInfo != null && networkInfo.isConnected()) {
-            new putProcedureTask(FileManager.this, mEmail, FileManager.SCOPE).execute(fname);
+            new putProcedureTask(FileManager.this, mEmail, SCOPE).execute(fnames);
         } else {
-            Toast.makeText(this, "Not online", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Not online. Please upload later.", Toast.LENGTH_LONG).show();
         }
 
     }
 
     // This async task will read the procedure steps from the spreadsheet
-    public class putProcedureTask extends AsyncTask<String, Void, Integer> {
+    public class putProcedureTask extends AsyncTask<String, Void, ArrayList<String>> {
         Activity mActivity;
         String mScope;
         String mEmail;
@@ -419,10 +435,11 @@ public class FileManager extends AppCompatActivity {
          * Executes the asynchronous job. This runs when you call execute()
          * on the AsyncTask instance.
          */
-        protected Integer doInBackground(String... fnames) {
-            try {
-                Log.i(TAG, "doInBackground");
+        protected ArrayList<String> doInBackground(String... fnames) {
+            Log.i(TAG, "doInBackground");
+            ArrayList<String> files = new ArrayList<String>();
 
+            try {
                 String token = fetchToken();
                 if (token != null) {
                     // **Insert the good stuff here.**
@@ -439,11 +456,13 @@ public class FileManager extends AppCompatActivity {
                         Patient p = Patient.deserialize(f, 0);
                         //hack for now, if file is doctor_*.ser it is a doctor file
                         // if it is patient_*.ser it is a patient file
-                        if (f.contains("doctor"))
+                        if (f.contains("doctor")) {
                             doctorUpdate(service, spreadsheet, p);
-                        else if (f.contains("patient"))
+                            files.add(f);
+                        } else if (f.contains("patient")) {
                             patientUpdate(service, spreadsheet, p);
-                        else
+                            files.add(f);
+                        } else
                             Log.e(TAG, "Error, not a patient or doctor file!");
 
                     }
@@ -459,7 +478,7 @@ public class FileManager extends AppCompatActivity {
 
             }
 
-            return 0;
+            return files;
         }
 
 
@@ -486,8 +505,15 @@ public class FileManager extends AppCompatActivity {
 
 
         @Override
-        protected void onPostExecute(Integer i) {
-            Log.i(TAG, "Posted new results");
+        protected void onPostExecute(ArrayList<String> files) {
+            Log.i(TAG, "Posted new results. Removing file(s): " );
+            for (String f : files) {
+                File myFile = new File(f);
+                myFile.delete();
+            }
+
+            dataAdapter.notifyDataSetChanged();
+
         }
     }
 
@@ -497,7 +523,19 @@ public class FileManager extends AppCompatActivity {
         if (p.pain == null) {
             Log.e(TAG, "No pain levels recorded to upload.");
             return;
+        } else {
+            addPatientPainLevels(service, spreadsheet, p);
+
+            WorksheetEntry worksheet = findWorksheet(service, spreadsheet, "Patient Summary");
+            // This will create an empty row if it isn't created already.
+            addPatientDataRow(service, worksheet, p);
+            // this re-writes the pain formulas to refresh them if they were previously written
+            addPainFormulas(service, worksheet, p);
         }
+
+    }
+
+    void addPatientPainLevels(SpreadsheetService service, SpreadsheetEntry spreadsheet, Patient p) {
         try {
             // Create a local representation of the new worksheet.
             WorksheetEntry worksheet = new WorksheetEntry();
@@ -516,20 +554,20 @@ public class FileManager extends AppCompatActivity {
             }
 
             // query the worksheet again to not use the local one
-            worksheet = findWorksheet(service,spreadsheet,ws_name);
+            worksheet = findWorksheet(service, spreadsheet, ws_name);
 
             // add the header rows
             URL cellFeedUrl = worksheet.getCellFeedUrl();
             CellFeed cellFeed = service.getFeed(cellFeedUrl, CellFeed.class);
-            CellEntry cell=new CellEntry(1,1,"Time");
+            CellEntry cell = new CellEntry(1, 1, "Time");
             service.insert(cellFeedUrl, cell);
-            cell=new CellEntry(1,2,"Pain");
+            cell = new CellEntry(1, 2, "Pain");
             service.insert(cellFeedUrl, cell);
 
-            // update the first row to have the correct titles
-            for (CellEntry c : cellFeed.getEntries()) {
-                Log.i(TAG,"Cell: " + c.getTitle().getPlainText());
-            }
+//            // update the first row to have the correct titles
+//            for (CellEntry c : cellFeed.getEntries()) {
+//                Log.i(TAG, "Cell: " + c.getTitle().getPlainText());
+//            }
 
             URL listFeedUrl = worksheet.getListFeedUrl();
 
@@ -560,24 +598,25 @@ public class FileManager extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     // This creates the patient summary line in the main worksheet
     void doctorUpdate(SpreadsheetService service, SpreadsheetEntry spreadsheet, Patient p) {
-
         WorksheetEntry worksheet = findWorksheet(service, spreadsheet, "Patient Summary");
-
         if (p == null) {
-            Log.e(TAG, "Invalid patient file.");
+            Log.e(TAG, "Invalid patient.");
         } else {
-            addPatientData(service, worksheet, p);
+            addPatientDataRow(service, worksheet, p);
+            populatePatientDataRow(service, worksheet, p);
+            // this re-writes the pain formulas to refresh them if they were previously written
             addPainFormulas(service, worksheet, p);
         }
     }
 
     // adds the basic stats to a new row
-    void addPatientData(SpreadsheetService service, WorksheetEntry worksheet,Patient p) {
+    void addPatientDataRow(SpreadsheetService service, WorksheetEntry worksheet, Patient p) {
+        Log.i(TAG, "addPatientDataRow");
+
         try {
             URL listFeedUrl = new URI(worksheet.getListFeedUrl().toString()
                     + "?sq=patientid=" + p.ID).toURL();
@@ -588,27 +627,64 @@ public class FileManager extends AppCompatActivity {
             if (l.size() > 1) {
                 Log.e(TAG, "Multiple matching rows: " + l.size());
                 row = l.get(0);
-                addSummary(row, p);
-                row.update();
             } else if (l.size() == 1) {
                 Log.i(TAG, "Updating row...");
                 row = l.get(0);
-                addSummary(row, p);
-                row.update();
             } else {
                 Log.i(TAG, "Creating row...");
-                URL listFeedUrl2 = worksheet.getListFeedUrl();
                 row = new ListEntry();
-                addSummary(row, p);
+            }
+
+            if (p.ID != null)
+                row.getCustomElements().setValueLocal("PatientID", Integer.toString(p.ID));
+
+            if (l.size() >0)
+                row.update();
+            else {
+                URL listFeedUrl2 = worksheet.getListFeedUrl();
                 service.insert(listFeedUrl2, row);
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
+    // adds the basic stats to a new row
+    void populatePatientDataRow(SpreadsheetService service, WorksheetEntry worksheet, Patient p) {
+        Log.i(TAG, "populatePatientDataRow");
+
+        try {
+            URL listFeedUrl = new URI(worksheet.getListFeedUrl().toString()
+                    + "?sq=patientid=" + p.ID).toURL();
+            ListFeed listFeed = service.getFeed(listFeedUrl, ListFeed.class);
+            List<ListEntry> l = listFeed.getEntries();
+
+            ListEntry row = null;
+            if (l.size() > 1) {
+                Log.e(TAG, "Multiple matching rows: " + l.size());
+                row = l.get(0);
+                populateSummaryRow(row, p);
+                row.update();
+            } else if (l.size() == 1) {
+                Log.i(TAG, "Updating row...");
+                row = l.get(0);
+                populateSummaryRow(row, p);
+                row.update();
+            } else {
+                Log.e(TAG,"Row not found!");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
     // fills in the cell formulas to look up the pain at different times
     void addPainFormulas(SpreadsheetService service, WorksheetEntry worksheet, Patient p) {
+        Log.i(TAG, "addPainFormulas");
+
         try {
             // get the column numbers of each Pain* by removing R1 from each
             URL cellFeedUrl = new URI(worksheet.getCellFeedUrl().toString()
@@ -617,9 +693,9 @@ public class FileManager extends AppCompatActivity {
 
             ArrayList<Integer> colNums = new ArrayList<Integer>();
             for (CellEntry cell : cellFeed.getEntries()) {
-//                    Log.i(TAG,cell.getId().substring(cell.getId().lastIndexOf('/') + 1));
-//                    Log.i(TAG,cell.getCell().getInputValue() + "\n");
-                if (cell.getCell().getInputValue().startsWith("Pain_"))
+//                Log.i(TAG, cell.getId().substring(cell.getId().lastIndexOf('/') + 1));
+//                Log.i(TAG, cell.getCell().getInputValue() + "\n");
+                if (cell.getCell().getInputValue().startsWith("Pain"))
                     colNums.add(cell.getCell().getCol());
             }
             // get the row number by finding the ID that matches
@@ -630,16 +706,17 @@ public class FileManager extends AppCompatActivity {
 
             Integer row = 0;
             for (CellEntry cell : cellFeed.getEntries()) {
-//                    Log.i(TAG, cell.getId().substring(cell.getId().lastIndexOf('/') + 1));
-//                    Log.i(TAG, cell.getCell().getInputValue() + "\n");
+//                Log.i(TAG, cell.getId().substring(cell.getId().lastIndexOf('/') + 1));
+//                Log.i(TAG, cell.getCell().getInputValue() + "\n");
                 if (cell.getCell().getInputValue().equals(Integer.toString(p.ID)))
                     row = cell.getCell().getRow();
 
             }
             // for each RmCn insert a formula with =LOOKUP
             for (Integer col : colNums) {
-                String cellContents = String.format("=LOOKUP(%s,'Patient %s'!$A:$A,'Patient %s'!$B:$B)",R1C1toA1(row,col+1),p.ID,p.ID);
-                CellEntry cell=new CellEntry(row,col,cellContents);
+                String cellContents = String.format("=LOOKUP(%s,'Patient %s'!$A:$A,'Patient %s'!$B:$B)",
+                        R1C1toA1(row, col + 1), p.ID, p.ID);
+                CellEntry cell = new CellEntry(row, col, cellContents);
                 service.insert(cellFeedUrl, cell);
             }
         } catch (Exception e) {
@@ -647,12 +724,12 @@ public class FileManager extends AppCompatActivity {
         }
     }
 
-    public String R1C1toA1(Integer row,Integer col) {
+    public String R1C1toA1(Integer row, Integer col) {
         char[] alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
         String name = row.toString();
         Integer value = col;
-        while (value>0) {
-            Integer remainder = (value-1) % 26;
+        while (value > 0) {
+            Integer remainder = (value - 1) % 26;
             name = alphabet[remainder] + name;
 
             value = ((value - remainder) / 26);
@@ -713,13 +790,13 @@ public class FileManager extends AppCompatActivity {
     }
 
 
-    protected void addSummary(ListEntry row, Patient p) {
-
+    protected void populateSummaryRow(ListEntry row, Patient p) {
+        Log.i(TAG, "addSummaryRow");
 
         // Iterate over the remaining columns, and print each cell value
-//        for (String tag : row.getCustomElements().getTags()) {
-//            Log.i(TAG, "Row: " + tag + " : " + row.getCustomElements().getValue(tag));
-//        }
+        for (String tag : row.getCustomElements().getTags()) {
+            Log.i(TAG, "Row: " + tag + " : " + row.getCustomElements().getValue(tag));
+        }
 
         if (p.ID != null)
             row.getCustomElements().setValueLocal("PatientID", Integer.toString(p.ID));
@@ -735,15 +812,13 @@ public class FileManager extends AppCompatActivity {
             SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 
             for (Pair<Long, String> pair : p.steps) {
-                String key1 = "Time" + pair.getSecond().replaceAll("_", "");
+                //Log.i(TAG, "Time : " + pair.getSecond());
+                String key1 = "Time_" + pair.getSecond();
+                key1 = key1.replaceAll("_", "");
                 Date resultdate = new Date(pair.getFirst());
                 String value1 = sdf.format(resultdate);
 
-                //String key2 = "Pain" + pair.getSecond().replaceAll("_", "");
-                //String value2 = "=LOOKUP(H2,'Patient" + p.ID + "'!$A:$A,'Patient " + p.ID + "'!$B:$B)";
-
                 row.getCustomElements().setValueLocal(key1, value1);
-                //row.getCustomElements().setValueLocal(key2, value2);
 
             }
         }

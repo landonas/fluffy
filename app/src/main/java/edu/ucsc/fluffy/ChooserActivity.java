@@ -291,7 +291,8 @@ public class ChooserActivity extends ActionBarActivity
         if (networkInfo != null && networkInfo.isConnected()) {
             new GetProcedureStepsTask(ChooserActivity.this, mEmail, SCOPE).execute();
         } else {
-            Toast.makeText(this, "Not online", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Cannot download procedure steps. Please ensure you have Internet access.", Toast.LENGTH_LONG).show();
+            finish();
         }
 
     }
@@ -400,10 +401,11 @@ public class ChooserActivity extends ActionBarActivity
                 // GooglePlayServices.apk is either old, disabled, or not present
                 // so we need to show the user some UI in the activity to recover.
                 ChooserActivity.this.handleException(userRecoverableException);
-            } catch (GoogleAuthException fatalException) {
+            } catch (GoogleAuthException e) {
                 // Some other type of unrecoverable exception has occurred.
                 // Report and log the error as appropriate for your app.
                 //...
+                e.printStackTrace();
             }
             return null;
         }
@@ -412,6 +414,12 @@ public class ChooserActivity extends ActionBarActivity
         protected void onPostExecute(ArrayList<String> s) {
             procedureSteps = s;
 
+            for (String str : procedureSteps) {
+                if (str.contains(" ")) {
+                    Toast.makeText(ChooserActivity.this, "Procedure steps may not contain spaces. Please fix in spreadsheet.", Toast.LENGTH_LONG).show();
+                    finish();
+                }
+            }
             // make the buttons active
             Button buttonAssistant = (Button) findViewById(R.id.buttonAssistant);
             buttonAssistant.setEnabled(true);

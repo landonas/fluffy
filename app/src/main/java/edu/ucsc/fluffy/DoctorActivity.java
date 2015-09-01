@@ -180,6 +180,7 @@ public class DoctorActivity extends ActionBarActivity
         if (currentStepIndex >= procedureSteps.size()) {
             Toast.makeText(this, "Procedure done.", Toast.LENGTH_SHORT).show();
             editPatient();
+
             finish();
         } else {
 
@@ -205,6 +206,11 @@ public class DoctorActivity extends ActionBarActivity
         if (f!=null && p!= null) {
             Log.i(TAG, "Saved " + f.getAbsolutePath());
             p.serialize(f.getAbsolutePath());
+            Intent intent = new Intent(this, FileManager.class);
+            ArrayList<String> files = new ArrayList<String>();
+            files.add(f.getAbsolutePath());
+            intent.putStringArrayListExtra("patientFile", files);
+            startActivity(intent);
         }
     }
 
