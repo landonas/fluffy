@@ -1,10 +1,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" tools:context="edu.ucsc.fluffy.PatientActivity">
+    <item android:id="@+id/action_exit"
+        android:icon="@drawable/ic_launcher"
+        android:title="@string/activity_exit"/>
     <item android:id="@+id/action_settings"
         android:icon="@drawable/ic_launcher"
-        android:title="@string/title_activity_preferences"/>
+        android:title="@string/activity_preferences"/>
     <item android:id="@+id/action_about"
         android:icon="@drawable/ic_launcher"
         android:title="@string/activity_about"/>
+
 </menu>

@@ -72,7 +72,7 @@ public class FileManager extends AppCompatActivity {
         ArrayList<String> myFiles = getIntent().getStringArrayListExtra("patientFile");
         if (myFiles != null) {
             Log.i(TAG, "PatientID File: " + myFiles.toString());
-            uploadData(myFiles);
+            uploadFiles(myFiles);
             finish();
         }
 
@@ -114,7 +114,7 @@ public class FileManager extends AppCompatActivity {
             editPatient();
             return true;
         } else if (id == R.id.action_sync) {
-            syncFiles();
+            uploadFiles();
             return true;
         }
 
@@ -319,7 +319,7 @@ public class FileManager extends AppCompatActivity {
     }
 
 
-    private void syncFiles() {
+    private void uploadFiles() {
 
         File myFile = null;
         Iterator<DataFile> listIterator = dataAdapter.fileList.listIterator();
@@ -343,7 +343,7 @@ public class FileManager extends AppCompatActivity {
                     f.setSelected(false); // clear them after send
                 }
             }
-            uploadData(files);
+            uploadFiles(files);
 
             dataAdapter.notifyDataSetChanged();
         }
@@ -399,12 +399,12 @@ public class FileManager extends AppCompatActivity {
     }
 
 
-    /**
-     * Attempts to retrieve the spreadsheet data.
-     * If the account is not yet known, invoke the picker. Once the account is known,
-     * start an instance of the AsyncTask to get the auth token and do work with it.
-     */
-    public void uploadData(ArrayList<String> fnames) {
+        /**
+         * Attempts to retrieve the spreadsheet data.
+         * If the account is not yet known, invoke the picker. Once the account is known,
+         * start an instance of the AsyncTask to get the auth token and do work with it.
+         */
+    public void uploadFiles(ArrayList<String> fnames) {
         if (mEmail == null) {
             pickUserAccount();
         }
@@ -420,7 +420,7 @@ public class FileManager extends AppCompatActivity {
     }
 
     // This async task will read the procedure steps from the spreadsheet
-    public class putProcedureTask extends AsyncTask<String, Void, ArrayList<String>> {
+    public class putProcedureTask extends AsyncTask<ArrayList<String>, Void, ArrayList<String>> {
         Activity mActivity;
         String mScope;
         String mEmail;
@@ -435,7 +435,7 @@ public class FileManager extends AppCompatActivity {
          * Executes the asynchronous job. This runs when you call execute()
          * on the AsyncTask instance.
          */
-        protected ArrayList<String> doInBackground(String... fnames) {
+        protected ArrayList<String> doInBackground(ArrayList<String>... fnames) {
             Log.i(TAG, "doInBackground");
             ArrayList<String> files = new ArrayList<String>();
 
@@ -451,7 +451,7 @@ public class FileManager extends AppCompatActivity {
 
                     SpreadsheetEntry spreadsheet = findSpreadsheet(service);
 
-                    for (String f : fnames) {
+                    for (String f : fnames[0]) {
                         Log.i(TAG, f);
                         Patient p = Patient.deserialize(f, 0);
                         //hack for now, if file is doctor_*.ser it is a doctor file
@@ -905,7 +905,7 @@ public class FileManager extends AppCompatActivity {
                 editor.commit();
 
                 // With the account name acquired, go get the auth token
-                syncFiles();
+                uploadFiles();
 
             } else if (resultCode == RESULT_CANCELED) {
                 // The account picker dialog closed without selecting an account.
@@ -916,7 +916,7 @@ public class FileManager extends AppCompatActivity {
                 requestCode == REQUEST_CODE_RECOVER_FROM_PLAY_SERVICES_ERROR)
                 && resultCode == RESULT_OK) {
             // Receiving a result that follows a GoogleAuthException, try auth again
-            syncFiles();
+            uploadFiles();
         }
     }
 

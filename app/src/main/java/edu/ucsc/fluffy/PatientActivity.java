@@ -1,6 +1,8 @@
 package edu.ucsc.fluffy;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -62,7 +64,7 @@ public class PatientActivity extends ActionBarActivity
             showPatientIDDialog();
     }
 
-    public void finishPatient(View view) {
+    private void finishPatient() {
         if (f != null && p != null) {
             Log.i(TAG, "Saved " + f.getAbsolutePath());
             p.serialize(f.getAbsolutePath());
@@ -84,16 +86,30 @@ public class PatientActivity extends ActionBarActivity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+        Intent intent = null;
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        // Handle presses on the action bar items
+        switch (item.getItemId()) {
+            case R.id.action_email:
+                intent = new Intent(this, FileManager.class);
+                startActivity(intent);
+                return true;
+            case R.id.action_settings:
+                intent = new Intent(this, Preferences.class);
+                startActivity(intent);
+                return true;
+            case R.id.action_file_manager:
+                intent = new Intent(this, FileManager.class);
+                startActivity(intent);
+                return true;
+            case R.id.action_exit:
+                finishPatient();
+                return true;
+            case R.id.action_about:
+                intent = new Intent(this, AboutActivity.class);
+                startActivity(intent);
+                return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 

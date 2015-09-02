@@ -25,32 +25,32 @@
         </activity>
         <activity
             android:name=".FileManager"
-            android:label="@string/title_activity_file_manager"
+            android:label="@string/activity_file_manager"
             android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name=".Preferences"
-            android:label="@string/title_activity_preferences"
+            android:label="@string/activity_preferences"
             android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name=".PatientActivity"
-            android:label="@string/title_activity_patient"
+            android:label="@string/activity_patient"
             android:screenOrientation="landscape" >
         </activity>
         <activity
             android:name=".DoctorActivity"
-            android:label="@string/title_activity_assistant"
+            android:label="@string/activity_assistant"
             android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name=".PatientData"
-            android:label="@string/title_activity_patient_data"
+            android:label="@string/activity_patient_data"
             android:screenOrientation="portrait">
         </activity>
         <activity
             android:name=".AboutActivity"
-            android:label="@string/title_activity_about" >
+            android:label="@string/activity_about" >
         </activity>
     </application>
 

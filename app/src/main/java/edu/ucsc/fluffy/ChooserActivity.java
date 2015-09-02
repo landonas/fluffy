@@ -21,6 +21,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
+
+import java.io.File;
 import java.util.ArrayList;
 import android.widget.Button;
 
@@ -146,6 +148,8 @@ public class ChooserActivity extends ActionBarActivity
             getProcedureSteps();
         }
 
+        uploadAllFiles();
+
     }
 
     @Override
@@ -191,13 +195,8 @@ public class ChooserActivity extends ActionBarActivity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
 
         Intent intent = null;
-
 
         // Handle presses on the action bar items
         switch (item.getItemId()) {
@@ -538,6 +537,21 @@ public class ChooserActivity extends ActionBarActivity
     public void startPatient(View view) {
         Intent intent = new Intent(this, PatientActivity.class);
         startActivity(intent);
+    }
+
+    private void uploadAllFiles() {
+        File fileDir = getApplicationContext().getExternalFilesDir(null);
+        File file[] = fileDir.listFiles();
+        ArrayList<String> fileNames = new ArrayList<String>();
+        for (int i=0; i < file.length; i++) {
+            fileNames.add(file[i].toString());
+            Log.i(TAG,file[i].toString());
+        }
+        if (fileNames.size()>0) {
+            Intent intent = new Intent(this, FileManager.class);
+            intent.putStringArrayListExtra("patientFile", fileNames);
+            startActivity(intent);
+        }
     }
 }
 
