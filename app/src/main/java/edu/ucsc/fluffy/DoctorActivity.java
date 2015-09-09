@@ -183,12 +183,15 @@ public class DoctorActivity extends ActionBarActivity
 
             finish();
         } else {
+            String currentStep = procedureSteps.get(currentStepIndex);
+            currentStep.replace("_", " ");
+            textCurrentStep.setText(currentStep);
 
-            textCurrentStep.setText(procedureSteps.get(currentStepIndex));
-
-            if (currentStepIndex+1 < procedureSteps.size())
-                textNextStep.setText(procedureSteps.get(currentStepIndex+1));
-            else
+            if (currentStepIndex+1 < procedureSteps.size()) {
+                currentStep = procedureSteps.get(currentStepIndex + 1);
+                currentStep.replace("_", " ");
+                textNextStep.setText(currentStep);
+            } else
                 textNextStep.setText("Finish");
         }
     }

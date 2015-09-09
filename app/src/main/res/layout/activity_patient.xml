@@ -11,17 +11,36 @@
         android:id="@+id/textView" />
 
     <SeekBar
-        android:layout_width="wrap_content"
+        android:layout_width="1000dp"
         android:layout_height="wrap_content"
         android:id="@+id/seekBar"
+        android:progressDrawable="@drawable/seek_bar"
+        android:thumb="@drawable/seek_bar_thumb"
         android:layout_below="@+id/textView"
         android:layout_alignParentStart="true"
         android:layout_marginTop="186dp"
         android:max="100"
-        android:progress="0"
+        android:progress="50"
         android:paddingLeft="30dp"
-        android:paddingRight="30dp"
-        android:layout_alignParentEnd="true" />
+        android:paddingRight="30dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="No Pain"
+        android:id="@+id/noPain"
+        android:layout_alignTop="@+id/maxPain"
+        android:layout_alignParentStart="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Max Pain"
+        android:id="@+id/maxPain"
+        android:layout_below="@+id/seekBar"
+        android:layout_alignEnd="@+id/seekBar" />
 
 
 </RelativeLayout>

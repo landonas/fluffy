@@ -21,10 +21,13 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
-
+import java.util.Arrays;
 import java.io.File;
 import java.util.ArrayList;
 import android.widget.Button;
+import java.text.Format;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
@@ -62,6 +65,7 @@ public class ChooserActivity extends ActionBarActivity
     public static String REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob";
     public static final String GOOGLE_ACCOUNT = "Google_Account";
     public static final String PROCEDURE_STEPS = "Procedure_Steps";
+    public static final String PROCEDURE_STEPS_DATE = "Procedure_Steps_Date";
 
     private GoogleApiClient mGoogleApiClient;
     // Request code to use when launching the resolution activity
@@ -82,7 +86,7 @@ public class ChooserActivity extends ActionBarActivity
     private void pickUserAccount() {
         // check if the saved account exists, and use it.
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
-        mEmail = sharedPref.getString(GOOGLE_ACCOUNT, null);
+        mEmail = sharedPref.getString(GOOGLE_ACCOUNT, "");
         Log.i(TAG,"mEmail read: "+mEmail);
 
         // if not ask for the accounts
@@ -256,7 +260,7 @@ public class ChooserActivity extends ActionBarActivity
 
     @Override
     protected void onStop() {
-        Log.i(TAG,"onStop");
+        Log.i(TAG, "onStop");
 
         if (mGoogleApiClient != null) {
             mGoogleApiClient.disconnect();
@@ -278,6 +282,7 @@ public class ChooserActivity extends ActionBarActivity
      * Attempts to retrieve the spreadsheet data.
      * If the account is not yet known, invoke the picker. Once the account is known,
      * start an instance of the AsyncTask to get the auth token and do work with it.
+     * Once the steps are retrieved, cache them in the app preferences if we are offline next time.
      */
     private void getProcedureSteps() {
         if (mEmail == null) {
@@ -290,10 +295,54 @@ public class ChooserActivity extends ActionBarActivity
         if (networkInfo != null && networkInfo.isConnected()) {
             new GetProcedureStepsTask(ChooserActivity.this, mEmail, SCOPE).execute();
         } else {
-            Toast.makeText(this, "Cannot download procedure steps. Please ensure you have Internet access.", Toast.LENGTH_LONG).show();
-            finish();
+            getCachedProcedureSteps();
+
+            // make the buttons active
+            Button buttonAssistant = (Button) findViewById(R.id.buttonAssistant);
+            buttonAssistant.setEnabled(true);
+
+            Button buttonPatient = (Button) findViewById(R.id.buttonPatient);
+            buttonPatient.setEnabled(true);
         }
 
+    }
+
+    // Uses the cached spreadsheet steps and prints a Toast of when the steps were cached.
+    private void getCachedProcedureSteps() {
+        // store the procedure steps and date in a cache for later use
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        String steps = sharedPref.getString(PROCEDURE_STEPS, "");
+        String date = sharedPref.getString(PROCEDURE_STEPS_DATE,"");
+
+        if (steps.equals("")) {
+            Toast.makeText(ChooserActivity.this, "Procedure cannot be downloaded. Please ensure you have Internet access.", Toast.LENGTH_LONG).show();
+            finish();
+        } else {
+            Toast.makeText(ChooserActivity.this, "Using cached procedure steps from " + date, Toast.LENGTH_LONG).show();
+            procedureSteps=new ArrayList<String>();
+            procedureSteps.addAll(Arrays.asList(steps.split(":")));
+            for (String str : procedureSteps)
+                Log.i(TAG,"Cached: " + str);
+            // we always had a colon at the end
+            procedureSteps.remove(procedureSteps.size()-1);
+        }
+    }
+
+    private void cacheProcedureSteps() {
+        // store the procedure steps and date in a cache for later use
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+
+        StringBuilder sb = new StringBuilder();
+        for (String str : procedureSteps) {
+            sb.append(str).append(":");
+        }
+        Log.i(TAG,"Caching steps: " + sb.toString());
+        Format formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date date = new Date();
+        editor.putString(PROCEDURE_STEPS_DATE, formatter.format(date));
+        editor.putString(PROCEDURE_STEPS, sb.toString());
+        editor.commit();
     }
 
     // This async task will read the procedure steps from the spreadsheet
@@ -419,6 +468,9 @@ public class ChooserActivity extends ActionBarActivity
                     finish();
                 }
             }
+
+            cacheProcedureSteps();
+
             // make the buttons active
             Button buttonAssistant = (Button) findViewById(R.id.buttonAssistant);
             buttonAssistant.setEnabled(true);

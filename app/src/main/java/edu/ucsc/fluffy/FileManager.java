@@ -107,7 +107,7 @@ public class FileManager extends AppCompatActivity {
         } else if (id == R.id.action_clear) {
             clearAllFiles();
             return true;
-        }else if (id == R.id.action_select) {
+        } else if (id == R.id.action_select) {
             selectAllFiles();
             return true;
         } else if (id == R.id.action_edit) {
@@ -399,11 +399,11 @@ public class FileManager extends AppCompatActivity {
     }
 
 
-        /**
-         * Attempts to retrieve the spreadsheet data.
-         * If the account is not yet known, invoke the picker. Once the account is known,
-         * start an instance of the AsyncTask to get the auth token and do work with it.
-         */
+    /**
+     * Attempts to retrieve the spreadsheet data.
+     * If the account is not yet known, invoke the picker. Once the account is known,
+     * start an instance of the AsyncTask to get the auth token and do work with it.
+     */
     public void uploadFiles(ArrayList<String> fnames) {
         if (mEmail == null) {
             pickUserAccount();
@@ -506,7 +506,7 @@ public class FileManager extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(ArrayList<String> files) {
-            Log.i(TAG, "Posted new results. Removing file(s): " );
+            Log.i(TAG, "Posted new results. Removing file(s): ");
             for (String f : files) {
                 File myFile = new File(f);
                 myFile.delete();
@@ -520,7 +520,7 @@ public class FileManager extends AppCompatActivity {
     // This creates the dedicated patient worksheet with time and pain data
     // and eventually the plot
     void patientUpdate(SpreadsheetService service, SpreadsheetEntry spreadsheet, Patient p) {
-        if (p.pain == null) {
+        if (p == null || p.pain == null) {
             Log.e(TAG, "No pain levels recorded to upload.");
             return;
         } else {
@@ -537,9 +537,14 @@ public class FileManager extends AppCompatActivity {
 
     void addPatientPainLevels(SpreadsheetService service, SpreadsheetEntry spreadsheet, Patient p) {
         try {
-            // Create a local representation of the new worksheet.
-            WorksheetEntry worksheet = new WorksheetEntry();
             String ws_name = "Patient " + p.ID;
+
+            // check if the worksheet exists, if so, delete it and start fresh
+            WorksheetEntry worksheet = findWorksheet(service, spreadsheet, ws_name);
+            if (worksheet != null)
+                worksheet.delete();
+            // Create a local representation of the new worksheet.
+            worksheet = new WorksheetEntry();
             worksheet.setTitle(new PlainTextConstruct(ws_name));
             worksheet.setColCount(2);
             worksheet.setRowCount(p.pain.size() + 1); // extra +1 for headers
@@ -593,9 +598,17 @@ public class FileManager extends AppCompatActivity {
                 row.getCustomElements().setValueLocal("Pain", Float.toString(pit.getSecond()));
                 service.insert(listFeedUrl2, row);
             }
-        } catch (ServiceException e) {
+        } catch (
+                ServiceException e
+                )
+
+        {
             e.printStackTrace();
-        } catch (Exception e) {
+        } catch (
+                Exception e
+                )
+
+        {
             e.printStackTrace();
         }
     }
@@ -638,7 +651,7 @@ public class FileManager extends AppCompatActivity {
             if (p.ID != null)
                 row.getCustomElements().setValueLocal("PatientID", Integer.toString(p.ID));
 
-            if (l.size() >0)
+            if (l.size() > 0)
                 row.update();
             else {
                 URL listFeedUrl2 = worksheet.getListFeedUrl();
@@ -672,7 +685,7 @@ public class FileManager extends AppCompatActivity {
                 populateSummaryRow(row, p);
                 row.update();
             } else {
-                Log.e(TAG,"Row not found!");
+                Log.e(TAG, "Row not found!");
             }
 
         } catch (Exception e) {
@@ -856,6 +869,7 @@ public class FileManager extends AppCompatActivity {
                 //this.setResult(e.toString());
             }
         }
+
     }
 
 

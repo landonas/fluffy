@@ -12,9 +12,11 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.SeekBar;
 import android.widget.Toast;
-
+import android.view.Display;
+import 	android.util.DisplayMetrics;
 import java.io.File;
 import java.util.ArrayList;
+import android.graphics.Point;
 
 public class PatientActivity extends ActionBarActivity
         implements PatientDialogFragment.PatientIDInterface {
@@ -28,18 +30,31 @@ public class PatientActivity extends ActionBarActivity
     private Float painLevel;
     private SeekBar sb;
 
+    private long lastTime = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_patient);
 
+        DisplayMetrics dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+        Log.i(TAG, "Height x Width: " + dm.widthPixels + "," + dm.xdpi + "," + dm.heightPixels + "," + dm.ydpi);
+        // we need a device that has 10cm width for this app
+        if (dm.widthPixels/dm.xdpi < 3.9371)
+            Toast.makeText(this, "Warning: Display is required to be more than 10cm.", Toast.LENGTH_LONG).show();
+
+
         sb = (SeekBar) findViewById(R.id.seekBar);
+
+        sb.setProgressDrawable(getResources().getDrawable(R.drawable.seek_bar));
+
         sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                Log.i(TAG, "Pain: " + Float.toString(painLevel));
-                long cur_time = System.currentTimeMillis();
-                p.setPain(cur_time, painLevel);
+                // always set the pain level when they stop touching
+                //Log.i(TAG, "Pain: " + Float.toString(painLevel));
+                long curTime = System.currentTimeMillis();
+                p.setPain(curTime, painLevel);
             }
 
             @Override
@@ -49,10 +64,29 @@ public class PatientActivity extends ActionBarActivity
 
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                long curTime = System.currentTimeMillis();
                 painLevel = progress / 10.0f;
+                // only set the pain level every 1 second approximately while they are touching
+                if (lastTime == 0 || (curTime - lastTime) > 1000) {
+                    p.setPain(curTime, painLevel);
+                    lastTime = curTime;
+                    //Log.i(TAG, "Progress: " + Float.toString(painLevel));
+                }
+
+
             }
         });
+
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION // hide nav bar
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN // hide status bar
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
     }
+
+
 
     @Override
     protected void onStart() {
