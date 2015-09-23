@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Fluffy</string>
+    <string name="app_name">VAS</string>
 
     <string name="instructions">Please select your level of pain on the scale from none (left) to maximum (right).</string>
     <string name="activity_preferences">Settings</string>

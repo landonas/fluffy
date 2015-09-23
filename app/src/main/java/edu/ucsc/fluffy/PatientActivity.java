@@ -5,7 +5,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-Himport android.view.Menu;
+import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
@@ -16,6 +17,7 @@ import 	android.util.DisplayMetrics;
 import java.io.File;
 import java.util.ArrayList;
 import android.graphics.Point;
+import android.view.ViewGroup.LayoutParams;
 
 public class PatientActivity extends ActionBarActivity
         implements PatientDialogFragment.PatientIDInterface {
@@ -42,8 +44,15 @@ public class PatientActivity extends ActionBarActivity
         if (dm.widthPixels/dm.xdpi < 3.9371)
             Toast.makeText(this, "Warning: Display is required to be more than 10cm.", Toast.LENGTH_LONG).show();
 
+        // we want it to be 10cm (3.9371 inches), so convert to pixels
+        double pixelWidth = 3.9371 * dm.xdpi;
 
         sb = (SeekBar) findViewById(R.id.seekBar);
+        View sb_view = (View)findViewById(R.id.seekBar);
+        LayoutParams params=sb_view.getLayoutParams();
+        params.width=(int)pixelWidth;
+        sb_view.setLayoutParams(params);
+
 
         sb.setProgressDrawable(getResources().getDrawable(R.drawable.seek_bar));
 
@@ -76,16 +85,29 @@ public class PatientActivity extends ActionBarActivity
             }
         });
 
+
+    }
+
+
+    @Override
+    protected void onPause() {
+        Log.i(TAG, "onPause");
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        Log.i(TAG, "onResume");
+        super.onResume();
+
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                         | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION // hide nav bar
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN // hide status bar
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
                         | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
     }
-
-
 
     @Override
     protected void onStart() {
@@ -95,6 +117,7 @@ public class PatientActivity extends ActionBarActivity
         // we need at least a patient ID to start
         if (patientID == 0)
             showPatientIDDialog();
+
     }
 
     private void finishPatient() {
@@ -160,6 +183,8 @@ public class PatientActivity extends ActionBarActivity
             if (resultCode == RESULT_OK) {
                 // restore the patient so that we have the new patient data
                 loadOrCreatePatient(patientID);
+
+
             }
         }
     }
