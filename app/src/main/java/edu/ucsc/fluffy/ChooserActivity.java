@@ -20,14 +20,8 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Toast;
-import java.util.Arrays;
-import java.io.File;
-import java.util.ArrayList;
 import android.widget.Button;
-import java.text.Format;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import android.widget.Toast;
 
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
@@ -51,8 +45,14 @@ import com.google.gdata.util.ServiceException;
 import net.hockeyapp.android.CrashManager;
 import net.hockeyapp.android.UpdateManager;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.text.Format;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 public class ChooserActivity extends ActionBarActivity

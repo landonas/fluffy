@@ -1,23 +1,19 @@
 package edu.ucsc.fluffy;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.TextView;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.SeekBar;
 import android.widget.Toast;
-import android.view.Display;
-import 	android.util.DisplayMetrics;
+
 import java.io.File;
 import java.util.ArrayList;
-import android.graphics.Point;
-import android.view.ViewGroup.LayoutParams;
 
 public class PatientActivity extends ActionBarActivity
         implements PatientDialogFragment.PatientIDInterface {

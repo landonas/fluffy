@@ -1,21 +1,16 @@
 package edu.ucsc.fluffy;
 
-import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
-import android.widget.Toast;
-import android.widget.TextView;
-import android.widget.EditText;
-import android.app.Activity;
-import android.widget.NumberPicker;
-import android.widget.Spinner;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+
 import java.io.File;
 
 public class PatientData extends Activity {

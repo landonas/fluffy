@@ -1,21 +1,17 @@
 package edu.ucsc.fluffy;
 
-import android.os.Bundle;
-import android.support.v4.app.DialogFragment;
-import android.app.Dialog;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.view.LayoutInflater;
+import android.app.Dialog;
 import android.content.DialogInterface;
-import android.widget.EditText;
-import android.view.View;
-import android.widget.Toast;
-import android.view.View.OnKeyListener;
+import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
 import android.view.KeyEvent;
-import android.util.Log;
-import android.widget.TextView.OnEditorActionListener;
-import android.widget.TextView;
+import android.view.LayoutInflater;
 import android.view.inputmethod.EditorInfo;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.TextView.OnEditorActionListener;
 /**
  * Created by mrg on 8/21/15.
  */

@@ -35,19 +35,27 @@ import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
 import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.AccountPicker;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-
+import com.google.gdata.client.spreadsheet.SpreadsheetService;
+import com.google.gdata.data.PlainTextConstruct;
+import com.google.gdata.data.spreadsheet.CellEntry;
+import com.google.gdata.data.spreadsheet.CellFeed;
+import com.google.gdata.data.spreadsheet.ListEntry;
+import com.google.gdata.data.spreadsheet.ListFeed;
+import com.google.gdata.data.spreadsheet.SpreadsheetEntry;
+import com.google.gdata.data.spreadsheet.SpreadsheetFeed;
+import com.google.gdata.data.spreadsheet.WorksheetEntry;
+import com.google.gdata.util.InvalidEntryException;
 import com.google.gdata.util.ServiceException;
-import com.google.gdata.client.spreadsheet.*;
-import com.google.gdata.data.spreadsheet.*;
-import com.google.gdata.util.*;
-import com.google.gdata.data.*;
-
 
 import java.io.File;
 import java.io.IOException;
-import java.net.*;
+import java.net.URI;
+import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 
 
 public class FileManager extends AppCompatActivity {

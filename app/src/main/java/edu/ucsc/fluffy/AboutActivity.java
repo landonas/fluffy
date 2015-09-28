@@ -6,7 +6,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class AboutActivity extends Activity {
 
