@@ -307,7 +307,7 @@ public class FileManager extends AppCompatActivity {
                     new String[]{"mrg@ucsc.edu"});
             //emailIntent.putExtra(android.content.Intent.EXTRA_CC,
             //       new String[]{emailCC});
-            emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Valsalva Files");
+            emailIntent.putExtra(Intent.EXTRA_SUBJECT, "VAS Files");
             //emailIntent.putExtra(Intent.EXTRA_TEXT, "Here are the Valsalva files that you wanted.");
             emailIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
             Context context = getApplicationContext();
@@ -461,6 +461,12 @@ public class FileManager extends AppCompatActivity {
 
                     for (String f : fnames[0]) {
                         Log.i(TAG, f);
+                        // sometimes there is a lag from the async task exiting the activity
+                        // before the file is actually removed. If we get here in a second call,
+                        // the file is already deleted.
+                        File curfile = new File(f);
+                        if (!curfile.exists())
+                            continue;
                         Patient p = Patient.deserialize(f, 0);
                         //hack for now, if file is doctor_*.ser it is a doctor file
                         // if it is patient_*.ser it is a patient file
@@ -525,56 +531,88 @@ public class FileManager extends AppCompatActivity {
         }
     }
 
-    // This creates the dedicated patient worksheet with time and pain data
-    // and eventually the plot
+    // This creates the patient worksheet and also adds a blank row
     void patientUpdate(SpreadsheetService service, SpreadsheetEntry spreadsheet, Patient p) {
         if (p == null || p.pain == null) {
             Log.e(TAG, "No pain levels recorded to upload.");
             return;
         } else {
-            addPatientPainLevels(service, spreadsheet, p);
+
+            WorksheetEntry patientWorksheet = createPatientWorksheet(service, spreadsheet, p);
+            addPatientPainLevels(service, patientWorksheet, p);
+            addPatientPainFormulas(service, patientWorksheet);
 
             WorksheetEntry worksheet = findWorksheet(service, spreadsheet, "Patient Summary");
             // This will create an empty row if it isn't created already.
             addPatientDataRow(service, worksheet, p);
             // this re-writes the pain formulas to refresh them if they were previously written
-            addPainFormulas(service, worksheet, p);
+            addSummaryPainFormulas(service, worksheet, p);
         }
 
     }
 
-    void addPatientPainLevels(SpreadsheetService service, SpreadsheetEntry spreadsheet, Patient p) {
-        try {
-            String ws_name = "Patient " + p.ID;
+    // Creates a new patient worksheet. Will delete the old one if it already exists.
+    WorksheetEntry createPatientWorksheet(SpreadsheetService service, SpreadsheetEntry spreadsheet, Patient p) {
+        String ws_name = "Patient " + p.ID;
 
-            // check if the worksheet exists, if so, delete it and start fresh
-            WorksheetEntry worksheet = findWorksheet(service, spreadsheet, ws_name);
+        // check if the worksheet exists, if so, delete it and start fresh
+        WorksheetEntry worksheet = findWorksheet(service, spreadsheet, ws_name);
+        try {
             if (worksheet != null)
                 worksheet.delete();
-            // Create a local representation of the new worksheet.
-            worksheet = new WorksheetEntry();
-            worksheet.setTitle(new PlainTextConstruct(ws_name));
-            worksheet.setColCount(2);
-            worksheet.setRowCount(p.pain.size() + 1); // extra +1 for headers
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        // Create a local representation of the new worksheet.
+        worksheet = new WorksheetEntry();
+        worksheet.setTitle(new PlainTextConstruct(ws_name));
+        worksheet.setColCount(4); // extra +2 for delta time column and weighted pain column
+        worksheet.setRowCount(p.pain.size() + 1); // extra +1 for headers
 
-            URL worksheetFeedUrl = spreadsheet.getWorksheetFeedUrl();
-            try {
-                service.insert(worksheetFeedUrl, worksheet);
-            } catch (InvalidEntryException e) {
-                Log.e(TAG, "Worksheet already exists.");
-                e.printStackTrace();
-                return;
-            }
+        URL worksheetFeedUrl = spreadsheet.getWorksheetFeedUrl();
+        try {
+            service.insert(worksheetFeedUrl, worksheet);
+        } catch (InvalidEntryException e) {
+            Log.e(TAG, "Worksheet already exists.");
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-            // query the worksheet again to not use the local one
-            worksheet = findWorksheet(service, spreadsheet, ws_name);
+        // query the worksheet again to not use the local one
+        worksheet = findWorksheet(service, spreadsheet, ws_name);
+        return (worksheet);
 
+    }
+
+    // This creates the patient summary line in the main worksheet, populates it with patient data
+    // and then computes (or rewrites) the formulas.
+    void doctorUpdate(SpreadsheetService service, SpreadsheetEntry spreadsheet, Patient p) {
+        WorksheetEntry worksheet = findWorksheet(service, spreadsheet, "Patient Summary");
+        if (p == null) {
+            Log.e(TAG, "Invalid patient.");
+        } else {
+            addPatientDataRow(service, worksheet, p);
+            populatePatientDataRow(service, worksheet, p);
+            // this re-writes the pain formulas to refresh them if they were previously written
+            addSummaryPainFormulas(service, worksheet, p);
+        }
+    }
+
+    // This creates a worksheet for the patient uploads the patient pain levels to an individual patient worksheet.
+    // If the worksheet already exists, it deletes and replaces the worksheet.
+    void addPatientPainLevels(SpreadsheetService service, WorksheetEntry worksheet, Patient p) {
+        try {
             // add the header rows
             URL cellFeedUrl = worksheet.getCellFeedUrl();
             CellFeed cellFeed = service.getFeed(cellFeedUrl, CellFeed.class);
             CellEntry cell = new CellEntry(1, 1, "Time");
             service.insert(cellFeedUrl, cell);
             cell = new CellEntry(1, 2, "Pain");
+            service.insert(cellFeedUrl, cell);
+            cell = new CellEntry(1, 3, "Delta_Time");
+            service.insert(cellFeedUrl, cell);
+            cell = new CellEntry(1, 4, "Weighted_Pain");
             service.insert(cellFeedUrl, cell);
 
 //            // update the first row to have the correct titles
@@ -598,12 +636,13 @@ public class FileManager extends AppCompatActivity {
 
             URL listFeedUrl2 = worksheet.getListFeedUrl();
             SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
-
+            Boolean firstRow = true;
             for (Pair<Long, Float> pit : p.pain) {
                 ListEntry row = new ListEntry();
                 Date resultdate = new Date(pit.getFirst());
                 row.getCustomElements().setValueLocal("Time", sdf.format(resultdate));
                 row.getCustomElements().setValueLocal("Pain", Float.toString(pit.getSecond()));
+
                 service.insert(listFeedUrl2, row);
             }
         } catch (
@@ -621,20 +660,34 @@ public class FileManager extends AppCompatActivity {
         }
     }
 
-    // This creates the patient summary line in the main worksheet
-    void doctorUpdate(SpreadsheetService service, SpreadsheetEntry spreadsheet, Patient p) {
-        WorksheetEntry worksheet = findWorksheet(service, spreadsheet, "Patient Summary");
-        if (p == null) {
-            Log.e(TAG, "Invalid patient.");
-        } else {
-            addPatientDataRow(service, worksheet, p);
-            populatePatientDataRow(service, worksheet, p);
-            // this re-writes the pain formulas to refresh them if they were previously written
-            addPainFormulas(service, worksheet, p);
+
+    void addPatientPainFormulas(SpreadsheetService service, WorksheetEntry worksheet) {
+        Log.i(TAG, "addPatientPainFormulas");
+
+        Integer col_delta = findColumn(service, worksheet, "Delta_Time");
+        Integer col_weighted = findColumn(service, worksheet, "Weighted_Pain");
+        try {
+            URL cellFeedUrl = worksheet.getCellFeedUrl();
+            CellFeed cellFeed = service.getFeed(cellFeedUrl, CellFeed.class);
+            // Ignore the header row, rows start at 1, so data rows start at 2
+            // The first data row should be 0
+            CellEntry delta_cell = new CellEntry(2, col_delta, "0");
+            service.insert(cellFeedUrl, delta_cell);
+            CellEntry weighted_cell = new CellEntry(2, col_weighted, "0");
+            service.insert(cellFeedUrl, weighted_cell);
+            // The remaining data rows
+            for (int row = 3; row < worksheet.getRowCount()+1; row++) {
+                CellEntry delta_cell = new CellEntry(row, col_delta, "=R[0]C[-2]-R[-1]C[-2]");
+                service.insert(cellFeedUrl, delta_cell);
+                CellEntry weighted_cell = new CellEntry(row, col_weighted, "=R[0]C[-1]*R[0]C[-2]");
+                service.insert(cellFeedUrl, weighted_cell);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-    // adds the basic stats to a new row
+    // This adds a blank patient data row in the summary sheet.
     void addPatientDataRow(SpreadsheetService service, WorksheetEntry worksheet, Patient p) {
         Log.i(TAG, "addPatientDataRow");
 
@@ -671,7 +724,7 @@ public class FileManager extends AppCompatActivity {
         }
     }
 
-    // adds the basic stats to a new row
+    // Adds the basic stats to a new or existing patient data row.
     void populatePatientDataRow(SpreadsheetService service, WorksheetEntry worksheet, Patient p) {
         Log.i(TAG, "populatePatientDataRow");
 
@@ -699,12 +752,62 @@ public class FileManager extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+
+    }
+
+    Integer findColumn(SpreadsheetService service, WorksheetEntry worksheet, String name) {
+        Log.i(TAG, "findColumn");
+
+        try {
+            // get the column numbers of each Pain* by removing R1 from each
+            URL cellFeedUrl = new URI(worksheet.getCellFeedUrl().toString()
+                    + "?max-row=1").toURL();
+            CellFeed cellFeed = service.getFeed(cellFeedUrl, CellFeed.class);
+
+            for (CellEntry cell : cellFeed.getEntries()) {
+                if (cell.getCell().getInputValue().equals(name))
+                    return (cell.getCell().getCol());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
     }
 
 
+    Integer findRow(SpreadsheetService service, WorksheetEntry worksheet, String name) {
+        Log.i(TAG, "findRow");
+
+        try {
+            // get the row number by finding the ID that matches
+            // get the column numbers of each Pain* by removing R1 from each
+            URL cellFeedUrl = new URI(worksheet.getCellFeedUrl().toString()
+                    + "?max-col=1").toURL();
+            CellFeed cellFeed = service.getFeed(cellFeedUrl, CellFeed.class);
+
+            // Find the correct patient row number
+            Integer row = 0;
+            for (CellEntry cell : cellFeed.getEntries()) {
+//                Log.i(TAG, cell.getId().substring(cell.getId().lastIndexOf('/') + 1));
+//                Log.i(TAG, cell.getCell().getInputValue() + "\n");
+                if (cell.getCell().getInputValue().equals(name))
+                    return (cell.getCell().getRow());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Log.e(TAG, "Couldn't find correct row!");
+        return 0;
+
+    }
+
     // fills in the cell formulas to look up the pain at different times
-    void addPainFormulas(SpreadsheetService service, WorksheetEntry worksheet, Patient p) {
-        Log.i(TAG, "addPainFormulas");
+    void addSummaryPainFormulas(SpreadsheetService service, WorksheetEntry worksheet, Patient
+            p) {
+        Log.i(TAG, "addSummaryPainFormulas");
 
         try {
             // get the column numbers of each Pain* by removing R1 from each
@@ -719,20 +822,14 @@ public class FileManager extends AppCompatActivity {
                 if (cell.getCell().getInputValue().startsWith("Pain"))
                     colNums.add(cell.getCell().getCol());
             }
-            // get the row number by finding the ID that matches
-            // get the column numbers of each Pain* by removing R1 from each
-            cellFeedUrl = new URI(worksheet.getCellFeedUrl().toString()
-                    + "?max-col=1").toURL();
-            cellFeed = service.getFeed(cellFeedUrl, CellFeed.class);
 
-            Integer row = 0;
-            for (CellEntry cell : cellFeed.getEntries()) {
-//                Log.i(TAG, cell.getId().substring(cell.getId().lastIndexOf('/') + 1));
-//                Log.i(TAG, cell.getCell().getInputValue() + "\n");
-                if (cell.getCell().getInputValue().equals(Integer.toString(p.ID)))
-                    row = cell.getCell().getRow();
+            Integer col_area_pain = findColumn(service, worksheet, "Area_Pain");
+            Integer col_avg_pain = findColumn(service, worksheet, "Avg_Pain");
+            Integer col_max_pain = findColumn(service, worksheet, "Max_Pain");
+            Integer col_min_pain = findColumn(service, worksheet, "Min_Pain");
 
-            }
+            Integer row = findRow(service, worksheet, Integer.toString(p.ID));
+
             // for each RmCn insert a formula with =LOOKUP
             for (Integer col : colNums) {
                 String cellContents = String.format("=LOOKUP(%s,'Patient %s'!$A:$A,'Patient %s'!$B:$B)",
@@ -740,6 +837,21 @@ public class FileManager extends AppCompatActivity {
                 CellEntry cell = new CellEntry(row, col, cellContents);
                 service.insert(cellFeedUrl, cell);
             }
+
+
+            String rowB = new String("'Patient" + Integer.toString(p.ID) + "'!B:B");
+            String rowC = new String("'Patient" + Integer.toString(p.ID) + "'!C:C");
+
+            CellEntry area_cell = new CellEntry(row, col_area_pain, "=SUMPRODUCT(" + rowC + "," + rowB + ")");
+            service.insert(cellFeedUrl, area_cell);
+            CellEntry avg_cell = new CellEntry(row, col_avg_pain, "=R[0]C[-1]/ SUM(" + rowC + ")");
+            service.insert(cellFeedUrl, avg_cell);
+            CellEntry max_cell = new CellEntry(row, col_max_pain, "=MAX(" + rowB + ")");
+            service.insert(cellFeedUrl, max_cell);
+            CellEntry min_cell = new CellEntry(row, col_min_pain, "=MIN(" + rowB + ")");
+            service.insert(cellFeedUrl, min_cell);
+
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -759,58 +871,8 @@ public class FileManager extends AppCompatActivity {
         return name;
     }
 
-    SpreadsheetEntry findSpreadsheet(SpreadsheetService service) {
 
-        // get the spreadsheet name
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        String ss_name = prefs.getString("spreadsheet_name", getString(R.string.pref_default_spreadsheet_name));
-
-
-        // Make a request to the API and get all spreadsheets.
-        SpreadsheetFeed feed;
-        try {
-            // Define the URL to request.  This should never change.
-            URL SPREADSHEET_FEED_URL = new URL(
-                    "https://spreadsheets.google.com/feeds/spreadsheets/private/full");
-
-            feed = service.getFeed(SPREADSHEET_FEED_URL, SpreadsheetFeed.class);
-            List<SpreadsheetEntry> spreadsheets = feed.getEntries();
-
-
-            // Iterate through all of the spreadsheets returned
-            for (SpreadsheetEntry spreadsheet : spreadsheets) {
-                // Print the title of this spreadsheet to the screen
-                if (ss_name != null && ss_name.equals(spreadsheet.getTitle().getPlainText())) {
-                    Log.i(TAG, "Found Sheet: " + spreadsheet.getTitle().getPlainText());
-                    return (spreadsheet);
-                }
-            }
-        } catch (ServiceException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    WorksheetEntry findWorksheet(SpreadsheetService service, SpreadsheetEntry spreadsheet, String ws_name) {
-        try {
-            for (WorksheetEntry worksheet : spreadsheet.getWorksheets()) {
-
-                if (ws_name.equals(worksheet.getTitle().getPlainText())) {
-                    Log.i(TAG, "Found Worksheet: " + worksheet.getTitle().getPlainText() + " " + worksheet.getRowCount() + " x " + worksheet.getColCount());
-                    return (worksheet);
-                }
-            }
-        } catch (ServiceException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-
+    // Adds the patient demographic information and the analysis formulas to the summary row.
     protected void populateSummaryRow(ListEntry row, Patient p) {
         Log.i(TAG, "addSummaryRow");
 
@@ -829,6 +891,7 @@ public class FileManager extends AppCompatActivity {
             row.getCustomElements().setValueLocal("Race", p.race);
         if (p.BMI != null)
             row.getCustomElements().setValueLocal("BMI", Float.toString(p.BMI));
+
         if (p.steps != null & p.steps.size() > 0) {
             SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 
@@ -846,20 +909,6 @@ public class FileManager extends AppCompatActivity {
 
 
     }
-
-
-//    // Create a local representation of the new worksheet.
-//    WorksheetEntry worksheet = new WorksheetEntry();
-//    worksheet.setTitle(new PlainTextConstruct("New Worksheet"));
-//    worksheet.setColCount(10);
-//    worksheet.setRowCount(20);
-//
-//    // Send the local representation of the worksheet to the API for
-//    // creation.  The URL to use here is the worksheet feed URL of our
-//    // spreadsheet.
-//    URL worksheetFeedUrl = spreadsheet.getWorksheetFeedUrl();
-//    service.insert(worksheetFeedUrl, worksheet);
-//
 
     private class GetAuthTokenCallback implements AccountManagerCallback<Bundle> {
         public void run(AccountManagerFuture<Bundle> result) {
@@ -941,5 +990,61 @@ public class FileManager extends AppCompatActivity {
             uploadFiles();
         }
     }
+
+
+    // Helper function to locate a spreadsheet with a fixed name in the preferences.
+    SpreadsheetEntry findSpreadsheet(SpreadsheetService service) {
+
+        // get the spreadsheet name
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        String ss_name = prefs.getString("spreadsheet_name", getString(R.string.pref_default_spreadsheet_name));
+
+
+        // Make a request to the API and get all spreadsheets.
+        SpreadsheetFeed feed;
+        try {
+            // Define the URL to request.  This should never change.
+            URL SPREADSHEET_FEED_URL = new URL(
+                    "https://spreadsheets.google.com/feeds/spreadsheets/private/full");
+
+            feed = service.getFeed(SPREADSHEET_FEED_URL, SpreadsheetFeed.class);
+            List<SpreadsheetEntry> spreadsheets = feed.getEntries();
+
+
+            // Iterate through all of the spreadsheets returned
+            for (SpreadsheetEntry spreadsheet : spreadsheets) {
+                // Print the title of this spreadsheet to the screen
+                if (ss_name != null && ss_name.equals(spreadsheet.getTitle().getPlainText())) {
+                    Log.i(TAG, "Found Sheet: " + spreadsheet.getTitle().getPlainText());
+                    return (spreadsheet);
+                }
+            }
+        } catch (ServiceException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    // Helper function to locate a worksheet with a given name.
+    WorksheetEntry findWorksheet(SpreadsheetService service, SpreadsheetEntry
+            spreadsheet, String ws_name) {
+        try {
+            for (WorksheetEntry worksheet : spreadsheet.getWorksheets()) {
+
+                if (ws_name.equals(worksheet.getTitle().getPlainText())) {
+                    Log.i(TAG, "Found Worksheet: " + worksheet.getTitle().getPlainText() + " " + worksheet.getRowCount() + " x " + worksheet.getColCount());
+                    return (worksheet);
+                }
+            }
+        } catch (ServiceException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 
 }

@@ -89,6 +89,8 @@ public class PatientActivity extends ActionBarActivity
     protected void onPause() {
         Log.i(TAG, "onPause");
         super.onPause();
+
+        finishPatient();
     }
 
     @Override
@@ -100,9 +102,9 @@ public class PatientActivity extends ActionBarActivity
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                         | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+                        //| View.SYSTEM_UI_FLAG_FULLSCREEN
+                       // | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
     }
 
     @Override
@@ -126,7 +128,6 @@ public class PatientActivity extends ActionBarActivity
             intent.putStringArrayListExtra("patientFile", files);
             startActivity(intent);
         }
-        finish();
     }
 
     @Override
@@ -155,7 +156,7 @@ public class PatientActivity extends ActionBarActivity
                 startActivity(intent);
                 return true;
             case R.id.action_exit:
-                finishPatient();
+                finish();
                 return true;
             case R.id.action_about:
                 intent = new Intent(this, AboutActivity.class);
