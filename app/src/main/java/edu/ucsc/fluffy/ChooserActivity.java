@@ -58,7 +58,7 @@ import java.util.List;
 public class ChooserActivity extends ActionBarActivity
         implements ConnectionCallbacks, OnConnectionFailedListener {
     private final static String TAG = "Fluffy";
-    public final String APP_ID="9f4540ae8fc66249da90e3c523efd662";
+    public final String APP_ID="73df053b50df6c2cf3fd781251a14e01";
 
     private String CLIENT_ID = "546501280634-9ap7gnjoqfo7dmk7vf7jkujka9t931gu.apps.googleusercontent.com";
     public static String SCOPE = "oauth2:https://spreadsheets.google.com/feeds";
@@ -90,7 +90,10 @@ public class ChooserActivity extends ActionBarActivity
         Log.i(TAG,"mEmail read: "+mEmail);
 
         // if not ask for the accounts
-        if (mEmail==null) {
+        // infinite loop until valid account is picked!
+        if (mEmail=="" || mEmail==null) {
+            //Log.i(TAG,"Starting account picker...");
+
             String[] accountTypes = new String[]{"com.google"};
             Intent intent = AccountPicker.newChooseAccountIntent(null, null,
                     accountTypes, false, null, null, null, null);
@@ -111,8 +114,6 @@ public class ChooserActivity extends ActionBarActivity
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putString(GOOGLE_ACCOUNT, mEmail);
                 editor.commit();
-
-                // With the account name acquired, go get the auth token
                 getProcedureSteps();
 
             } else if (resultCode == RESULT_CANCELED) {
@@ -149,10 +150,10 @@ public class ChooserActivity extends ActionBarActivity
         Log.i(TAG, "GoogleApiClient connected");
 
         if (procedureSteps == null) {
-            getProcedureSteps();
+            //getProcedureSteps();
         }
 
-        uploadAllFiles();
+        //uploadAllFiles();
 
     }
 
@@ -238,7 +239,7 @@ public class ChooserActivity extends ActionBarActivity
 
     @Override
     protected void onStart() {
-        Log.i(TAG,"onStart");
+        Log.i(TAG, "onStart");
 
         super.onStart();
 
@@ -285,7 +286,7 @@ public class ChooserActivity extends ActionBarActivity
      * Once the steps are retrieved, cache them in the app preferences if we are offline next time.
      */
     private void getProcedureSteps() {
-        if (mEmail == null) {
+        if (mEmail=="" || mEmail == null) {
             pickUserAccount();
         }
 
@@ -294,6 +295,9 @@ public class ChooserActivity extends ActionBarActivity
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         if (networkInfo != null && networkInfo.isConnected()) {
             new GetProcedureStepsTask(ChooserActivity.this, mEmail, SCOPE).execute();
+
+            uploadAllFiles();
+
         } else {
             getCachedProcedureSteps();
 

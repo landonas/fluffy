@@ -553,7 +553,7 @@ public class FileManager extends AppCompatActivity {
 
     // Creates a new patient worksheet. Will delete the old one if it already exists.
     WorksheetEntry createPatientWorksheet(SpreadsheetService service, SpreadsheetEntry spreadsheet, Patient p) {
-        String ws_name = "Patient " + p.ID;
+        String ws_name = "Patient_" + p.ID;
 
         // check if the worksheet exists, if so, delete it and start fresh
         WorksheetEntry worksheet = findWorksheet(service, spreadsheet, ws_name);
@@ -645,17 +645,9 @@ public class FileManager extends AppCompatActivity {
 
                 service.insert(listFeedUrl2, row);
             }
-        } catch (
-                ServiceException e
-                )
-
-        {
+        } catch (ServiceException e) {
             e.printStackTrace();
-        } catch (
-                Exception e
-                )
-
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -677,9 +669,9 @@ public class FileManager extends AppCompatActivity {
             service.insert(cellFeedUrl, weighted_cell);
             // The remaining data rows
             for (int row = 3; row < worksheet.getRowCount()+1; row++) {
-                CellEntry delta_cell = new CellEntry(row, col_delta, "=R[0]C[-2]-R[-1]C[-2]");
+                delta_cell = new CellEntry(row, col_delta, "=R[0]C[-2]-R[-1]C[-2]");
                 service.insert(cellFeedUrl, delta_cell);
-                CellEntry weighted_cell = new CellEntry(row, col_weighted, "=R[0]C[-1]*R[0]C[-2]");
+                weighted_cell = new CellEntry(row, col_weighted, "=R[0]C[-1]*R[0]C[-2]");
                 service.insert(cellFeedUrl, weighted_cell);
             }
         } catch (Exception e) {
@@ -756,53 +748,7 @@ public class FileManager extends AppCompatActivity {
 
     }
 
-    Integer findColumn(SpreadsheetService service, WorksheetEntry worksheet, String name) {
-        Log.i(TAG, "findColumn");
 
-        try {
-            // get the column numbers of each Pain* by removing R1 from each
-            URL cellFeedUrl = new URI(worksheet.getCellFeedUrl().toString()
-                    + "?max-row=1").toURL();
-            CellFeed cellFeed = service.getFeed(cellFeedUrl, CellFeed.class);
-
-            for (CellEntry cell : cellFeed.getEntries()) {
-                if (cell.getCell().getInputValue().equals(name))
-                    return (cell.getCell().getCol());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return 0;
-    }
-
-
-    Integer findRow(SpreadsheetService service, WorksheetEntry worksheet, String name) {
-        Log.i(TAG, "findRow");
-
-        try {
-            // get the row number by finding the ID that matches
-            // get the column numbers of each Pain* by removing R1 from each
-            URL cellFeedUrl = new URI(worksheet.getCellFeedUrl().toString()
-                    + "?max-col=1").toURL();
-            CellFeed cellFeed = service.getFeed(cellFeedUrl, CellFeed.class);
-
-            // Find the correct patient row number
-            Integer row = 0;
-            for (CellEntry cell : cellFeed.getEntries()) {
-//                Log.i(TAG, cell.getId().substring(cell.getId().lastIndexOf('/') + 1));
-//                Log.i(TAG, cell.getCell().getInputValue() + "\n");
-                if (cell.getCell().getInputValue().equals(name))
-                    return (cell.getCell().getRow());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        Log.e(TAG, "Couldn't find correct row!");
-        return 0;
-
-    }
 
     // fills in the cell formulas to look up the pain at different times
     void addSummaryPainFormulas(SpreadsheetService service, WorksheetEntry worksheet, Patient
@@ -832,15 +778,15 @@ public class FileManager extends AppCompatActivity {
 
             // for each RmCn insert a formula with =LOOKUP
             for (Integer col : colNums) {
-                String cellContents = String.format("=LOOKUP(%s,'Patient %s'!$A:$A,'Patient %s'!$B:$B)",
+                String cellContents = String.format("=LOOKUP(%s,'Patient_%s'!$A:$A,'Patient %s'!$B:$B)",
                         R1C1toA1(row, col + 1), p.ID, p.ID);
                 CellEntry cell = new CellEntry(row, col, cellContents);
                 service.insert(cellFeedUrl, cell);
             }
 
 
-            String rowB = new String("'Patient" + Integer.toString(p.ID) + "'!B:B");
-            String rowC = new String("'Patient" + Integer.toString(p.ID) + "'!C:C");
+            String rowB = new String("'Patient_" + Integer.toString(p.ID) + "'!B:B");
+            String rowC = new String("'Patient_" + Integer.toString(p.ID) + "'!C:C");
 
             CellEntry area_cell = new CellEntry(row, col_area_pain, "=SUMPRODUCT(" + rowC + "," + rowB + ")");
             service.insert(cellFeedUrl, area_cell);
@@ -953,7 +899,7 @@ public class FileManager extends AppCompatActivity {
                 } else if (e instanceof UserRecoverableAuthException) {
                     // Unable to authenticate, such as when the user has not yet granted
                     // the app access to the account, but the user can fix this.
-                    // Forward the user to an activity in Google Play services.
+                    // Forward the user to an activity in  Play services.
                     Intent intent = ((UserRecoverableAuthException) e).getIntent();
                     startActivityForResult(intent,
                             REQUEST_CODE_RECOVER_FROM_PLAY_SERVICES_ERROR);
@@ -1044,6 +990,53 @@ public class FileManager extends AppCompatActivity {
             e.printStackTrace();
         }
         return null;
+    }
+
+    // Helper function to find a column with a given name (in the header row)
+    Integer findColumn(SpreadsheetService service, WorksheetEntry worksheet, String name) {
+        Log.i(TAG, "findColumn");
+
+        try {
+            // get the column numbers of each Pain* by removing R1 from each
+            URL cellFeedUrl = new URI(worksheet.getCellFeedUrl().toString()
+                    + "?max-row=1").toURL();
+            CellFeed cellFeed = service.getFeed(cellFeedUrl, CellFeed.class);
+
+            for (CellEntry cell : cellFeed.getEntries()) {
+                if (cell.getCell().getInputValue().equals(name))
+                    return (cell.getCell().getCol());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Log.e(TAG, "Couldn't find correct column!");
+        return 0;
+    }
+
+    // Helper function to find a row with a given name (first column value)
+    Integer findRow(SpreadsheetService service, WorksheetEntry worksheet, String name) {
+        Log.i(TAG, "findRow");
+
+        try {
+            // get the row number by finding the ID that matches
+            // get the column numbers of each Pain* by removing R1 from each
+            URL cellFeedUrl = new URI(worksheet.getCellFeedUrl().toString()
+                    + "?max-col=1").toURL();
+            CellFeed cellFeed = service.getFeed(cellFeedUrl, CellFeed.class);
+
+            // Find the correct patient row number
+            for (CellEntry cell : cellFeed.getEntries()) {
+                if (cell.getCell().getInputValue().equals(name))
+                    return (cell.getCell().getRow());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Log.e(TAG, "Couldn't find correct row!");
+        return 0;
+
     }
 
 
