@@ -64,8 +64,8 @@ public class FileManager extends AppCompatActivity {
     private MySimpleArrayAdapter dataAdapter = null;
     private String mEmail; // Received from newChooseAccountIntent(); passed to getToken()
 
-    public static final String GOOGLE_ACCOUNT = "Google_Account";
-    public static String SCOPE = "oauth2:https://spreadsheets.google.com/feeds";
+    public static final String GOOGLE_ACCOUNT = "INSERT CODE";
+    public static String SCOPE = "INSERT CODE";
 
     private static final int REQUEST_CODE_PICK_ACCOUNT = 1000;
     private static final int REQUEST_CODE_RECOVER_FROM_AUTH_ERROR = 1002;
