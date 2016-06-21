@@ -61,6 +61,14 @@ import java.util.List;
 public class FileManager extends AppCompatActivity {
     final private String TAG = FileManager.class.getSimpleName();
 
+
+    //add appkeys
+
+
+    public static final String GOOGLE_ACCOUNT = "Google_Account";
+    public static String SCOPE = "oauth2:https://spreadsheets.google.com/feeds";
+
+    //end appkeys
     private MySimpleArrayAdapter dataAdapter = null;
     private String mEmail; // Received from newChooseAccountIntent(); passed to getToken()
 

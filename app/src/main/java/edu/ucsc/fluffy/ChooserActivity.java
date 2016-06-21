@@ -62,6 +62,15 @@ public class ChooserActivity extends ActionBarActivity
 
   //ADD CODE FROM TEXT DOC POSTED CHOOSERACTIVITY.JAVA
 
+    public final String APP_ID="73df053b50df6c2cf3fd781251a14e01";
+    private String CLIENT_ID = "546501280634-9ap7gnjoqfo7dmk7vf7jkujka9t931gu.apps.googleusercontent.com";
+    public static String SCOPE = "oauth2:https://spreadsheets.google.com/feeds";
+    public static String REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob";
+    public static final String GOOGLE_ACCOUNT = "Google_Account";
+    public static final String PROCEDURE_STEPS = "Procedure_Steps";
+
+    //end appkey
+
     private GoogleApiClient mGoogleApiClient;
     // Request code to use when launching the resolution activity
     private static final int REQUEST_RESOLVE_ERROR = 1001;
