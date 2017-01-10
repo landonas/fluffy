@@ -72,8 +72,8 @@ public class FileManager extends AppCompatActivity {
     private MySimpleArrayAdapter dataAdapter = null;
     private String mEmail; // Received from newChooseAccountIntent(); passed to getToken()
 
-    public static final String GOOGLE_ACCOUNT = "INSERT CODE";
-    public static String SCOPE = "INSERT CODE";
+    //public static final String GOOGLE_ACCOUNT = "INSERT CODE";
+    //public static String SCOPE = "INSERT CODE";
 
     private static final int REQUEST_CODE_PICK_ACCOUNT = 1000;
     private static final int REQUEST_CODE_RECOVER_FROM_AUTH_ERROR = 1002;
@@ -209,6 +209,7 @@ public class FileManager extends AppCompatActivity {
         File rootDir = getApplicationContext().getExternalFilesDir(null);
 
         ArrayList<DataFile> files = new ArrayList<DataFile>();
+        try{
         for (File f : rootDir.listFiles()) {
             if (f.isFile())
                 files.add(new DataFile(f, false));
@@ -229,6 +230,11 @@ public class FileManager extends AppCompatActivity {
             }
 
         });
+    }
+        catch(NullPointerException e)
+        {
+            System.out.print("NullPointerException caught");
+        }
     }
 
     private void deleteFiles() {
@@ -846,21 +852,26 @@ public class FileManager extends AppCompatActivity {
         if (p.BMI != null)
             row.getCustomElements().setValueLocal("BMI", Float.toString(p.BMI));
 
-        if (p.steps != null & p.steps.size() > 0) {
-            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+        try {
+            if (p.steps != null & p.steps.size() > 0) {
+                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
 
-            for (Pair<Long, String> pair : p.steps) {
-                //Log.i(TAG, "Time : " + pair.getSecond());
-                String key1 = "Time_" + pair.getSecond();
-                key1 = key1.replaceAll("_", "");
-                Date resultdate = new Date(pair.getFirst());
-                String value1 = sdf.format(resultdate);
+                for (Pair<Long, String> pair : p.steps) {
+                    //Log.i(TAG, "Time : " + pair.getSecond());
+                    String key1 = "Time_" + pair.getSecond();
+                    key1 = key1.replaceAll("_", "");
+                    Date resultdate = new Date(pair.getFirst());
+                    String value1 = sdf.format(resultdate);
 
-                row.getCustomElements().setValueLocal(key1, value1);
+                    row.getCustomElements().setValueLocal(key1, value1);
 
+                }
             }
         }
-
+        catch(NullPointerException e)
+        {
+            System.out.print("NullPointerException caught");
+        }
 
     }
 
