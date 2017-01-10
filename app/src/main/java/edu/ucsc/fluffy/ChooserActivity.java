@@ -62,7 +62,7 @@ public class ChooserActivity extends ActionBarActivity
 
   //ADD CODE FROM TEXT DOC POSTED CHOOSERACTIVITY.JAVA
 
-    public final String APP_ID="73df053b50df6c2cf3fd781251a14e01";
+    //public final String APP_ID="73df053b50df6c2cf3fd781251a14e01";
     private String CLIENT_ID = "546501280634-9ap7gnjoqfo7dmk7vf7jkujka9t931gu.apps.googleusercontent.com";
     public static String SCOPE = "oauth2:https://spreadsheets.google.com/feeds";
     public static String REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob";
@@ -320,7 +320,7 @@ public class ChooserActivity extends ActionBarActivity
         // store the procedure steps and date in a cache for later use
         SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
         String steps = sharedPref.getString(PROCEDURE_STEPS, "");
-        String date = sharedPref.getString(PROCEDURE_STEPS_DATE,"");
+        String date = sharedPref.getString(PROCEDURE_STEPS,"");
 
         if (steps.equals("")) {
             Toast.makeText(ChooserActivity.this, "Procedure cannot be downloaded. Please ensure you have Internet access.", Toast.LENGTH_LONG).show();
@@ -348,7 +348,7 @@ public class ChooserActivity extends ActionBarActivity
         Log.i(TAG,"Caching steps: " + sb.toString());
         Format formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date = new Date();
-        editor.putString(PROCEDURE_STEPS_DATE, formatter.format(date));
+        editor.putString(PROCEDURE_STEPS, formatter.format(date));
         editor.putString(PROCEDURE_STEPS, sb.toString());
         editor.commit();
     }
