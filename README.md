@@ -3,4 +3,4 @@ Doctors can track patients pain based on universal pain assesment tool. Data is 
 
 ![pain scale](https://github.com/lsoriano808/fluffy/blob/master/Pain-Scale-Wong-Baker.jpg)
 
-PROJECT IS DEPRECATED AND NO LONGER BEING WORKED ON.
+<b> PROJECT IS DEPRECATED AND NO LONGER BEING WORKED ON.</b>
